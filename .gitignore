@@ -1,0 +1,58 @@
+# MATLAB
+*.asv
+*.autosave
+*.mex
+*.mexa64
+*.mexglx
+*.mexmaci
+*.mexmaci64
+*.mexw32
+*.mexw64
+
+# MATLAB Compiler
+*.ctf
+
+# MATLAB Project files
+*.prj.user
+*.slxc
+*.slx.autosave
+
+# Simulink
+*.slxc
+*.slx.autosave
+*.mdl.autosave
+
+# Temporary files
+*.tmp
+*.bak
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts
+*.fig
+*.p
+
+# Data files (uncomment if you don't want to track data)
+# *.mat
+# *.csv
+
+# Experiment results (uncomment if you don't want to track results)
+Experiment/DataSet/*.mat
+Experiment/DataSet/*.csv
+
+# Resources (project XML files - uncomment if you don't want to track)
+# resources/
+
+# Log files
+*.log
+
