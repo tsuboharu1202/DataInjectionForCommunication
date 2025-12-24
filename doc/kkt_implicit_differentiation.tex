@@ -1,0 +1,721 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+
+\title{KKT条件のImplicit Differentiationによる勾配計算}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{問題設定}
+
+\subsection{SDP問題の定式化}
+
+Theorem 3に基づくSDP問題は以下のように定式化される：
+
+\begin{align}
+\max_{Y, L, \alpha, \beta, \delta} \quad & \delta \\
+\text{subject to} \quad & \text{LMI (12)} \\
+& \delta > 0, \quad Y > 0, \quad \alpha \geq 0, \quad \beta > 0
+\end{align}
+
+ここで、決定変数は：
+\begin{itemize}
+\item $Y \in \mathbb{R}^{n \times n}$: 対称正定値行列
+\item $L \in \mathbb{R}^{m \times n}$: 制御ゲイン行列
+\item $\alpha \in \mathbb{R}$: スカラー（$\alpha \geq 0$）
+\item $\beta \in \mathbb{R}$: スカラー（$\beta > 0$）
+\item $\delta \in \mathbb{R}$: スカラー（$\delta > 0$）、実際の実装では $\Delta = \delta^2$ を使用
+\end{itemize}
+
+\subsection{LMIブロック}
+
+LMI制約は以下の3つのブロックで構成される：
+
+\begin{align}
+F_1 &= \begin{bmatrix}
+Y - \Delta (BB^T) - \beta I_n & 0_{n \times n} & BL & 0_{n \times m} \\
+0_{n \times n} & 0_{n \times n} & Y & 0_{n \times m} \\
+L^T B^T & Y^T & Y & L^T \\
+0_{m \times n} & 0_{m \times n} & L & I_m
+\end{bmatrix} \in \mathbb{R}^{(3n+m) \times (3n+m)} \\
+F_2 &= \alpha (G \Phi G^T) \in \mathbb{R}^{(3n+m) \times (3n+m)} \\
+F_3 &= \begin{bmatrix}
+Y & L^T \\
+L & I_m
+\end{bmatrix} \in \mathbb{R}^{(n+m) \times (n+m)}
+\end{align}
+
+制約条件：
+\begin{align}
+F_1 - F_2 &\geq 0 \quad \text{(ラグランジュ乗数: $\Lambda_1 \in \mathbb{R}^{(3n+m) \times (3n+m)}$)} \\
+F_3 &\geq \epsilon I_{n+m} \quad \text{(ラグランジュ乗数: $\Lambda_3 \in \mathbb{R}^{(n+m) \times (n+m)}$)} \\
+\alpha &\geq 0 \quad \text{(ラグランジュ乗数: $\Lambda_\alpha \in \mathbb{R}$)} \\
+\beta &\geq \epsilon \quad \text{(ラグランジュ乗数: $\Lambda_\beta \in \mathbb{R}$)} \\
+\Delta &\geq \epsilon \quad \text{(ラグランジュ乗数: $\Lambda_\Delta \in \mathbb{R}$)} \\
+Y &\geq \epsilon I_n \quad \text{(ラグランジュ乗数: $\Lambda_Y \in \mathbb{R}^{n \times n}$)}
+\end{align}
+
+ここで、$\epsilon > 0$は数値的安定性のための小さな正定数である。
+
+\section{Lagrangian関数}
+
+Lagrangian関数は以下のように定義される：
+
+\begin{align}
+\mathcal{L} &= -\Delta \\
+&\quad - \text{tr}(\Lambda_1 (F_1 - F_2)) \\
+&\quad - \text{tr}(\Lambda_3 (F_3 - \epsilon I_{n+m})) \\
+&\quad - \Lambda_\alpha \alpha \\
+&\quad - \Lambda_\beta (\beta - \epsilon) \\
+&\quad - \Lambda_\Delta (\Delta - \epsilon) \\
+&\quad - \text{tr}(\Lambda_Y (Y - \epsilon I_n))
+\end{align}
+
+\section{KKT条件}
+
+最適性条件（KKT条件）は以下の通り：
+
+\subsection{勾配条件（Stationarity Conditions）}
+
+\begin{align}
+G_1 &= \frac{\partial \mathcal{L}}{\partial L} = 0_{nm \times 1} \label{eq:G1} \\
+G_2 &= \frac{\partial \mathcal{L}}{\partial Y} = 0_{n^2 \times 1} \label{eq:G2} \\
+G_3 &= \frac{\partial \mathcal{L}}{\partial \alpha} = 0 \label{eq:G3} \\
+G_4 &= \frac{\partial \mathcal{L}}{\partial \beta} = 0 \label{eq:G4} \\
+G_5 &= \frac{\partial \mathcal{L}}{\partial \Delta} = 0 \label{eq:G5}
+\end{align}
+
+\subsection{相補性条件（Complementarity Conditions）}
+
+\begin{align}
+G_6 &: \quad \Lambda_1 (F_1 - \alpha F_2) = 0_{(3n+m) \times (3n+m)} \label{eq:G6} \\
+G_7 &: \quad \Lambda_3 F_3 = 0_{(n+m) \times (n+m)} \label{eq:G7} \\
+G_8 &: \quad \alpha \Lambda_\alpha = 0 \label{eq:G8} \\
+G_9 &: \quad \beta \Lambda_\beta = 0 \label{eq:G9} \\
+G_{10} &: \quad \Delta \Lambda_\Delta = 0 \label{eq:G10} \\
+G_{14} &: \quad \Lambda_Y Y = 0_{n \times n} \label{eq:G14}
+\end{align}
+
+\subsection{対称性条件（Symmetry Conditions）}
+
+\begin{align}
+G_{11} &: \quad \Lambda_1 - \Lambda_1^T = 0_{(3n+m) \times (3n+m)} \label{eq:G11} \\
+G_{12} &: \quad \Lambda_3 - \Lambda_3^T = 0_{(n+m) \times (n+m)} \label{eq:G12} \\
+G_{13} &: \quad Y - Y^T = 0_{n \times n} \label{eq:G13} \\
+G_{15} &: \quad \Lambda_Y - \Lambda_Y^T = 0_{n \times n} \label{eq:G15}
+\end{align}
+
+\section{Implicit Differentiation}
+
+データ $D = [Z^T, X^T, U^T]^T \in \mathbb{R}^{(2n+m) \times T}$ に関する勾配を計算するため、KKT条件を $D$ で微分する。$D$をベクトル化して $\text{vec}(D) \in \mathbb{R}^{T(2n+m)}$ とすると：
+
+\begin{align}
+\frac{\partial G_i}{\partial \bm{x}} \frac{d\bm{x}}{d\text{vec}(D)} + \frac{\partial G_i}{\partial \text{vec}(D)} = 0, \quad i = 1, \ldots, 15
+\end{align}
+
+ここで、$\bm{x} = [\text{vec}(L), \text{vec}(Y), \alpha, \beta, \Delta, \text{vec}(\Lambda_1), \text{vec}(\Lambda_3), \Lambda_\alpha, \Lambda_\beta, \Lambda_\Delta, \text{vec}(\Lambda_Y)]^T$ である。
+
+これを線形システムとして整理すると：
+
+\begin{align}
+H \frac{d\bm{x}}{d\text{vec}(D)} = -B \label{eq:linear_system}
+\end{align}
+
+ここで、$H \in \mathbb{R}^{r \times c}$ は係数行列（$r$は制約の総行数、$c$は$\bm{x}$の次元）、$B \in \mathbb{R}^{r \times T(2n+m)}$ は右辺行列である。$\frac{d\bm{x}}{d\text{vec}(D)} \in \mathbb{R}^{c \times T(2n+m)}$ は勾配行列である。
+
+\section{基本微分の導出}
+
+\subsection{$\frac{\partial F_1}{\partial L}$の導出}
+
+$F_1$は以下の構造を持つ：
+
+\begin{align}
+F_1 = \begin{bmatrix}
+Y - \Delta (BB^T) - \beta I_n & 0_{n \times n} & BL & 0_{n \times m} \\
+0_{n \times n} & 0_{n \times n} & Y & 0_{n \times m} \\
+L^T B^T & Y^T & Y & L^T \\
+0_{m \times n} & 0_{m \times n} & L & I_m
+\end{bmatrix}
+\end{align}
+
+$L$が現れる位置：
+\begin{itemize}
+\item $(1,3)$ブロック: $BL$
+\item $(3,1)$ブロック: $L^T B^T$
+\item $(3,4)$ブロック: $L^T$
+\item $(4,3)$ブロック: $L$
+\end{itemize}
+
+選択行列を定義する：
+\begin{align}
+E_1 &= \begin{bmatrix} I_n \\ 0_{(2n+m) \times n} \end{bmatrix} \in \mathbb{R}^{(3n+m) \times n} \\
+E_2 &= \begin{bmatrix} 0_{2n \times n} \\ I_n \\ 0_{m \times n} \end{bmatrix} \in \mathbb{R}^{(3n+m) \times n} \\
+E_3 &= \begin{bmatrix} 0_{3n \times m} \\ I_m \end{bmatrix} \in \mathbb{R}^{(3n+m) \times m}
+\end{align}
+
+$\frac{\partial F_1}{\partial L}$は以下のように導出される：
+
+\begin{align}
+\frac{\partial F_1}{\partial L} &= \frac{\partial \text{vec}(F_1)}{\partial \text{vec}(L)} \\
+&= \text{vec}(BL) \text{に関する項} + \text{vec}(L^T B^T) \text{に関する項} + \text{vec}(L^T) \text{に関する項} + \text{vec}(L) \text{に関する項}
+\end{align}
+
+具体的には：
+\begin{align}
+\frac{\partial F_1}{\partial L} &= \text{vec}(BL) \text{を} \text{vec}(L) \text{で微分} \\
+&\quad + \text{vec}(L^T B^T) \text{を} \text{vec}(L) \text{で微分} \\
+&\quad + \text{vec}(L^T) \text{を} \text{vec}(L) \text{で微分} \\
+&\quad + \text{vec}(L) \text{を} \text{vec}(L) \text{で微分}
+\end{align}
+
+Kronecker積を用いると：
+\begin{align}
+\text{vec}(BL) &= (I_n \otimes B) \text{vec}(L) \\
+\text{vec}(L^T B^T) &= (B^T \otimes I_n) K_{m,n} \text{vec}(L) \\
+\text{vec}(L^T) &= K_{m,n} \text{vec}(L) \\
+\text{vec}(L) &= I_{nm} \text{vec}(L)
+\end{align}
+
+したがって：
+\begin{align}
+\frac{\partial F_1}{\partial L} &= \text{vec}(BL) \text{の寄与}: \quad E_1 \otimes (E_2 B) \\
+&\quad + \text{vec}(L^T B^T) \text{の寄与}: \quad (E_2 B) \otimes E_1 \cdot K_{m,n} \\
+&\quad + \text{vec}(L^T) \text{の寄与}: \quad E_3 \otimes E_2 \\
+&\quad + \text{vec}(L) \text{の寄与}: \quad E_2 \otimes E_3 \cdot K_{n,m}
+\end{align}
+
+まとめると：
+\begin{align}
+\frac{\partial F_1}{\partial L} = \text{vec}(F_1) \in \mathbb{R}^{(3n+m)^2}, \quad \text{vec}(L) \in \mathbb{R}^{nm}
+\end{align}
+
+\begin{align}
+\frac{\partial \text{vec}(F_1)}{\partial \text{vec}(L)} &= \text{vec}(BL) \text{の寄与}: \quad E_1 \otimes (E_2 B) \\
+&\quad + \text{vec}(L^T B^T) \text{の寄与}: \quad (E_2 B) \otimes E_1 \cdot K_{m,n} \\
+&\quad + \text{vec}(L^T) \text{の寄与}: \quad E_3 \otimes E_2 \\
+&\quad + \text{vec}(L) \text{の寄与}: \quad E_2 \otimes E_3 \cdot K_{n,m}
+\end{align}
+
+ここで、$K_{p,q}$はcommutation matrixである。
+
+\subsection{$\frac{\partial F_1}{\partial Y}$の導出}
+
+$F_1$において$Y$が現れる位置：
+\begin{itemize}
+\item $(1,1)$ブロック: $Y$
+\item $(2,3)$ブロック: $Y$
+\item $(3,2)$ブロック: $Y^T$
+\item $(3,3)$ブロック: $Y$
+\end{itemize}
+
+選択行列：
+\begin{align}
+E_1 &= \begin{bmatrix} I_n \\ 0_{(2n+m) \times n} \end{bmatrix} \in \mathbb{R}^{(3n+m) \times n} \\
+E_2 &= \begin{bmatrix} 0_{n \times n} \\ I_n \\ 0_{(n+m) \times n} \end{bmatrix} \in \mathbb{R}^{(3n+m) \times n} \\
+E_3 &= \begin{bmatrix} 0_{2n \times n} \\ I_n \\ 0_{m \times n} \end{bmatrix} \in \mathbb{R}^{(3n+m) \times n}
+\end{align}
+
+$\frac{\partial F_1}{\partial Y}$は以下のように導出される：
+
+\begin{align}
+\frac{\partial \text{vec}(F_1)}{\partial \text{vec}(Y)} &= \text{vec}(Y) \text{の寄与（$(1,1)$ブロック）}: \quad E_1 \otimes E_1 \\
+&\quad + \text{vec}(Y) \text{の寄与（$(2,3)$ブロック）}: \quad E_2 \otimes E_2 \\
+&\quad + \text{vec}(Y^T) \text{の寄与（$(3,2)$ブロック）}: \quad E_3 \otimes E_2 \cdot K_{n,n} \\
+&\quad + \text{vec}(Y) \text{の寄与（$(3,3)$ブロック）}: \quad E_2 \otimes E_3 \cdot K_{n,n}
+\end{align}
+
+\subsection{$\frac{\partial F_3}{\partial L}$の導出}
+
+$F_3$は以下の構造を持つ：
+
+\begin{align}
+F_3 = \begin{bmatrix}
+Y & L^T \\
+L & I_m
+\end{bmatrix}
+\end{align}
+
+$L$が現れる位置：
+\begin{itemize}
+\item $(2,1)$ブロック: $L$
+\item $(1,2)$ブロック: $L^T$
+\end{itemize}
+
+選択行列：
+\begin{align}
+E_1 &= \begin{bmatrix} I_n \\ 0_{m \times n} \end{bmatrix} \in \mathbb{R}^{(n+m) \times n} \\
+E_2 &= \begin{bmatrix} 0_{n \times m} \\ I_m \end{bmatrix} \in \mathbb{R}^{(n+m) \times m}
+\end{align}
+
+$\frac{\partial F_3}{\partial L}$は以下のように導出される：
+
+\begin{align}
+\frac{\partial \text{vec}(F_3)}{\partial \text{vec}(L)} &= \text{vec}(L) \text{の寄与（$(2,1)$ブロック）}: \quad E_2 \otimes E_1 \\
+&\quad + \text{vec}(L^T) \text{の寄与（$(1,2)$ブロック）}: \quad E_1 \otimes E_2 \cdot K_{m,n}
+\end{align}
+
+\subsection{$\frac{\partial F_3}{\partial Y}$の導出}
+
+$F_3$において$Y$が現れる位置：
+\begin{itemize}
+\item $(1,1)$ブロック: $Y$
+\end{itemize}
+
+選択行列：
+\begin{align}
+E_1 &= \begin{bmatrix} I_n \\ 0_{m \times n} \end{bmatrix} \in \mathbb{R}^{(n+m) \times n}
+\end{align}
+
+$\frac{\partial F_3}{\partial Y}$は以下のように導出される：
+
+\begin{align}
+\frac{\partial \text{vec}(F_3)}{\partial \text{vec}(Y)} &= E_1 \otimes E_1
+\end{align}
+
+\subsection{$\frac{\partial F_2}{\partial D}$の導出}
+
+$F_2 = \alpha (G \Phi G^T)$であり、$G$はデータ$D$に依存する。
+
+$G$の構造：
+\begin{align}
+G = \begin{bmatrix}
+I_n & Z - BU \\
+0_{n \times n} & -X \\
+0_{n \times n} & 0_{n \times T} \\
+0_{m \times n} & 0_{m \times T}
+\end{bmatrix} \in \mathbb{R}^{(3n+m) \times (n+T)}
+\end{align}
+
+データ$D = [Z^T, X^T, U^T]^T$に対する$G$の微分を考える。
+
+選択行列を定義する：
+\begin{align}
+E_z &= \begin{bmatrix} I_n & 0_{n \times n} & 0_{n \times m} \end{bmatrix} \in \mathbb{R}^{n \times (2n+m)} \\
+E_x &= \begin{bmatrix} 0_{n \times n} & I_n & 0_{n \times m} \end{bmatrix} \in \mathbb{R}^{n \times (2n+m)} \\
+E_u &= \begin{bmatrix} 0_{m \times n} & 0_{m \times n} & I_m \end{bmatrix} \in \mathbb{R}^{m \times (2n+m)}
+\end{align}
+
+$G$の各ブロックを$D$で微分すると：
+\begin{align}
+\frac{\partial G}{\partial D} &= \frac{\partial}{\partial D} \begin{bmatrix}
+I_n & Z - BU \\
+0_{n \times n} & -X \\
+0_{n \times n} & 0_{n \times T} \\
+0_{m \times n} & 0_{m \times T}
+\end{bmatrix}
+\end{align}
+
+時間方向の選択行列：
+\begin{align}
+E_{\text{left}} &= \begin{bmatrix} 0_{n \times T} \\ I_T \end{bmatrix} \in \mathbb{R}^{(n+T) \times T} \\
+E_{\text{right}} &= \begin{bmatrix} E_z - B E_u \\ -E_x \\ 0_{(n+m) \times (2n+m)} \end{bmatrix} \in \mathbb{R}^{(3n+m) \times (2n+m)}
+\end{align}
+
+したがって：
+\begin{align}
+\frac{\partial G}{\partial D} = E_{\text{left}} \otimes E_{\text{right}} \in \mathbb{R}^{(3n+m)(n+T) \times (2n+m)T}
+\end{align}
+
+$F_2 = \alpha (G \Phi G^T)$の微分は：
+\begin{align}
+\frac{\partial F_2}{\partial D} &= \alpha \left( \frac{\partial G}{\partial D} \Phi G^T + G \Phi \frac{\partial G^T}{\partial D} \right)
+\end{align}
+
+Kronecker積を用いると：
+\begin{align}
+\frac{\partial \text{vec}(F_2)}{\partial \text{vec}(D)} &= \alpha \left( (G \Phi) \otimes I_{3n+m} \cdot \frac{\partial \text{vec}(G)}{\partial \text{vec}(D)} + I_{3n+m} \otimes (G \Phi) \cdot K_{3n+m,n+T} \cdot \frac{\partial \text{vec}(G)}{\partial \text{vec}(D)} \right)
+\end{align}
+
+\subsection{Commutation Matrix}
+
+Commutation matrix $K_{p,q} \in \mathbb{R}^{pq \times pq}$は、以下の性質を持つ：
+
+\begin{align}
+K_{p,q} \text{vec}(A) = \text{vec}(A^T), \quad A \in \mathbb{R}^{p \times q}
+\end{align}
+
+具体的な構成：
+\begin{align}
+K_{p,q} = \sum_{i=1}^p \sum_{j=1}^q E_{ij} \otimes E_{ji}
+\end{align}
+
+ここで、$E_{ij}$は$(i,j)$要素のみが1で他が0の行列である。
+
+\section{各制約の導出}
+
+\subsection{$G_1$: Lagrangianを$L$で微分}
+
+\begin{align}
+G_1 = \frac{\partial \mathcal{L}}{\partial L} = 0_{nm \times 1}
+\end{align}
+
+導出：
+\begin{align}
+\frac{\partial G_1}{\partial \text{vec}(L)} &= 0_{nm \times nm} \\
+\frac{\partial G_1}{\partial \text{vec}(Y)} &= 0_{nm \times n^2} \\
+\frac{\partial G_1}{\partial \alpha} &= 0_{nm \times 1} \\
+\frac{\partial G_1}{\partial \beta} &= 0_{nm \times 1} \\
+\frac{\partial G_1}{\partial \Delta} &= 0_{nm \times 1} \\
+\frac{\partial G_1}{\partial \text{vec}(\Lambda_1)} &= -\left(\frac{\partial F_1}{\partial L}\right)^T \in \mathbb{R}^{nm \times (3n+m)^2} \\
+\frac{\partial G_1}{\partial \text{vec}(\Lambda_3)} &= -\left(\frac{\partial F_3}{\partial L}\right)^T \in \mathbb{R}^{nm \times (n+m)^2} \\
+\frac{\partial G_1}{\partial \Lambda_\alpha} &= 0_{nm \times 1} \\
+\frac{\partial G_1}{\partial \Lambda_\beta} &= 0_{nm \times 1} \\
+\frac{\partial G_1}{\partial \Lambda_\Delta} &= 0_{nm \times 1} \\
+\frac{\partial G_1}{\partial \text{vec}(\Lambda_Y)} &= 0_{nm \times n^2}
+\end{align}
+
+\subsection{$G_2$: Lagrangianを$Y$で微分}
+
+\begin{align}
+G_2 = \frac{\partial \mathcal{L}}{\partial Y} = 0_{n^2 \times 1}
+\end{align}
+
+導出：
+\begin{align}
+\frac{\partial G_2}{\partial \text{vec}(L)} &= 0_{n^2 \times nm} \\
+\frac{\partial G_2}{\partial \text{vec}(Y)} &= 0_{n^2 \times n^2} \\
+\frac{\partial G_2}{\partial \alpha} &= 0_{n^2 \times 1} \\
+\frac{\partial G_2}{\partial \beta} &= 0_{n^2 \times 1} \\
+\frac{\partial G_2}{\partial \Delta} &= 0_{n^2 \times 1} \\
+\frac{\partial G_2}{\partial \text{vec}(\Lambda_1)} &= -\left(\frac{\partial F_1}{\partial Y}\right)^T \in \mathbb{R}^{n^2 \times (3n+m)^2} \\
+\frac{\partial G_2}{\partial \text{vec}(\Lambda_3)} &= -\left(\frac{\partial F_3}{\partial Y}\right)^T \in \mathbb{R}^{n^2 \times (n+m)^2} \\
+\frac{\partial G_2}{\partial \Lambda_\alpha} &= 0_{n^2 \times 1} \\
+\frac{\partial G_2}{\partial \Lambda_\beta} &= 0_{n^2 \times 1} \\
+\frac{\partial G_2}{\partial \Lambda_\Delta} &= 0_{n^2 \times 1} \\
+\frac{\partial G_2}{\partial \text{vec}(\Lambda_Y)} &= I_{n^2}
+\end{align}
+
+\subsection{$G_3$: Lagrangianを$\alpha$で微分}
+
+\begin{align}
+G_3 = \frac{\partial \mathcal{L}}{\partial \alpha} = 0
+\end{align}
+
+導出：
+\begin{align}
+\frac{\partial G_3}{\partial \text{vec}(L)} &= 0_{1 \times nm} \\
+\frac{\partial G_3}{\partial \text{vec}(Y)} &= 0_{1 \times n^2} \\
+\frac{\partial G_3}{\partial \alpha} &= 0 \\
+\frac{\partial G_3}{\partial \beta} &= 0 \\
+\frac{\partial G_3}{\partial \Delta} &= 0 \\
+\frac{\partial G_3}{\partial \text{vec}(\Lambda_1)} &= \text{vec}(F_2)^T \in \mathbb{R}^{1 \times (3n+m)^2} \\
+\frac{\partial G_3}{\partial \text{vec}(\Lambda_3)} &= 0_{1 \times (n+m)^2} \\
+\frac{\partial G_3}{\partial \Lambda_\alpha} &= -1 \\
+\frac{\partial G_3}{\partial \Lambda_\beta} &= 0 \\
+\frac{\partial G_3}{\partial \Lambda_\Delta} &= 0 \\
+\frac{\partial G_3}{\partial \text{vec}(\Lambda_Y)} &= 0_{1 \times n^2}
+\end{align}
+
+\subsection{$G_4$: Lagrangianを$\beta$で微分}
+
+\begin{align}
+G_4 = \frac{\partial \mathcal{L}}{\partial \beta} = 0
+\end{align}
+
+導出：
+\begin{align}
+\frac{\partial G_4}{\partial \text{vec}(L)} &= 0_{1 \times nm} \\
+\frac{\partial G_4}{\partial \text{vec}(Y)} &= 0_{1 \times n^2} \\
+\frac{\partial G_4}{\partial \alpha} &= 0 \\
+\frac{\partial G_4}{\partial \beta} &= 0 \\
+\frac{\partial G_4}{\partial \Delta} &= 0 \\
+\frac{\partial G_4}{\partial \text{vec}(\Lambda_1)} &= \text{vec}(M_{11})^T \in \mathbb{R}^{1 \times (3n+m)^2}
+\end{align}
+
+ここで、$M_{11} = E_{11} E_{11}^T$、$E_{11} = \begin{bmatrix} I_n \\ 0_{(2n+m) \times n} \end{bmatrix} \in \mathbb{R}^{(3n+m) \times n}$である。
+
+\begin{align}
+\frac{\partial G_4}{\partial \text{vec}(\Lambda_3)} &= 0_{1 \times (n+m)^2} \\
+\frac{\partial G_4}{\partial \Lambda_\alpha} &= 0 \\
+\frac{\partial G_4}{\partial \Lambda_\beta} &= -1 \\
+\frac{\partial G_4}{\partial \Lambda_\Delta} &= 0 \\
+\frac{\partial G_4}{\partial \text{vec}(\Lambda_Y)} &= 0_{1 \times n^2}
+\end{align}
+
+\subsection{$G_5$: Lagrangianを$\Delta$で微分}
+
+\begin{align}
+G_5 = \frac{\partial \mathcal{L}}{\partial \Delta} = 0
+\end{align}
+
+導出：
+\begin{align}
+\frac{\partial G_5}{\partial \text{vec}(L)} &= 0_{1 \times nm} \\
+\frac{\partial G_5}{\partial \text{vec}(Y)} &= 0_{1 \times n^2} \\
+\frac{\partial G_5}{\partial \alpha} &= 0 \\
+\frac{\partial G_5}{\partial \beta} &= 0 \\
+\frac{\partial G_5}{\partial \Delta} &= 0 \\
+\frac{\partial G_5}{\partial \text{vec}(\Lambda_1)} &= \text{vec}(M_{11,B})^T \in \mathbb{R}^{1 \times (3n+m)^2}
+\end{align}
+
+ここで、$M_{11,B} = E_{11,B} E_{11,B}^T$、$E_{11,B} = \begin{bmatrix} B \\ 0_{(2n+m) \times m} \end{bmatrix} \in \mathbb{R}^{(3n+m) \times m}$である。
+
+\begin{align}
+\frac{\partial G_5}{\partial \text{vec}(\Lambda_3)} &= 0_{1 \times (n+m)^2} \\
+\frac{\partial G_5}{\partial \Lambda_\alpha} &= 0 \\
+\frac{\partial G_5}{\partial \Lambda_\beta} &= 0 \\
+\frac{\partial G_5}{\partial \Lambda_\Delta} &= -1 \\
+\frac{\partial G_5}{\partial \text{vec}(\Lambda_Y)} &= 0_{1 \times n^2}
+\end{align}
+
+\subsection{$G_6$: 相補性条件 $\Lambda_1 (F_1 - \alpha F_2) = 0$}
+
+\begin{align}
+G_6 = \Lambda_1 (F_1 - \alpha F_2) = 0_{(3n+m) \times (3n+m)}
+\end{align}
+
+導出（$D$で微分）：
+\begin{align}
+\frac{\partial \text{vec}(G_6)}{\partial \text{vec}(L)} &= \text{vec}(\Lambda_1) \otimes I_{3n+m} \cdot \frac{\partial \text{vec}(F_1)}{\partial \text{vec}(L)} \in \mathbb{R}^{(3n+m)^2 \times nm} \\
+\frac{\partial \text{vec}(G_6)}{\partial \text{vec}(Y)} &= \text{vec}(\Lambda_1) \otimes I_{3n+m} \cdot \frac{\partial \text{vec}(F_1)}{\partial \text{vec}(Y)} \in \mathbb{R}^{(3n+m)^2 \times n^2} \\
+\frac{\partial \text{vec}(G_6)}{\partial \alpha} &= -\text{vec}(F_2 \Lambda_1) \in \mathbb{R}^{(3n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_6)}{\partial \beta} &= -\text{vec}(M_{11} \Lambda_1) \in \mathbb{R}^{(3n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_6)}{\partial \Delta} &= -\text{vec}(M_{11,B} \Lambda_1) \in \mathbb{R}^{(3n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_6)}{\partial \text{vec}(\Lambda_1)} &= K_{3n+m,3n+m} \cdot (I_{3n+m} \otimes (F_1 - \alpha F_2)) \in \mathbb{R}^{(3n+m)^2 \times (3n+m)^2} \\
+\frac{\partial \text{vec}(G_6)}{\partial \text{vec}(\Lambda_3)} &= 0_{(3n+m)^2 \times (n+m)^2} \\
+\frac{\partial \text{vec}(G_6)}{\partial \Lambda_\alpha} &= 0_{(3n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_6)}{\partial \Lambda_\beta} &= 0_{(3n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_6)}{\partial \Lambda_\Delta} &= 0_{(3n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_6)}{\partial \text{vec}(\Lambda_Y)} &= 0_{(3n+m)^2 \times n^2}
+\end{align}
+
+\subsection{$G_7$: 相補性条件 $\Lambda_3 F_3 = 0$}
+
+\begin{align}
+G_7 = \Lambda_3 F_3 = 0_{(n+m) \times (n+m)}
+\end{align}
+
+導出（$D$で微分）：
+\begin{align}
+\frac{\partial \text{vec}(G_7)}{\partial \text{vec}(L)} &= \text{vec}(\Lambda_3) \otimes I_{n+m} \cdot \frac{\partial \text{vec}(F_3)}{\partial \text{vec}(L)} \in \mathbb{R}^{(n+m)^2 \times nm} \\
+\frac{\partial \text{vec}(G_7)}{\partial \text{vec}(Y)} &= \text{vec}(\Lambda_3) \otimes I_{n+m} \cdot \frac{\partial \text{vec}(F_3)}{\partial \text{vec}(Y)} \in \mathbb{R}^{(n+m)^2 \times n^2} \\
+\frac{\partial \text{vec}(G_7)}{\partial \alpha} &= 0_{(n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_7)}{\partial \beta} &= 0_{(n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_7)}{\partial \Delta} &= 0_{(n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_7)}{\partial \text{vec}(\Lambda_1)} &= 0_{(n+m)^2 \times (3n+m)^2} \\
+\frac{\partial \text{vec}(G_7)}{\partial \text{vec}(\Lambda_3)} &= K_{n+m,n+m} \cdot (I_{n+m} \otimes F_3) \in \mathbb{R}^{(n+m)^2 \times (n+m)^2} \\
+\frac{\partial \text{vec}(G_7)}{\partial \Lambda_\alpha} &= 0_{(n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_7)}{\partial \Lambda_\beta} &= 0_{(n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_7)}{\partial \Lambda_\Delta} &= 0_{(n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_7)}{\partial \text{vec}(\Lambda_Y)} &= 0_{(n+m)^2 \times n^2}
+\end{align}
+
+\subsection{$G_8$: 相補性条件 $\alpha \Lambda_\alpha = 0$}
+
+\begin{align}
+G_8 = \alpha \Lambda_\alpha = 0
+\end{align}
+
+導出：
+\begin{align}
+\frac{\partial G_8}{\partial \text{vec}(L)} &= 0_{1 \times nm} \\
+\frac{\partial G_8}{\partial \text{vec}(Y)} &= 0_{1 \times n^2} \\
+\frac{\partial G_8}{\partial \alpha} &= \Lambda_\alpha \\
+\frac{\partial G_8}{\partial \beta} &= 0 \\
+\frac{\partial G_8}{\partial \Delta} &= 0 \\
+\frac{\partial G_8}{\partial \text{vec}(\Lambda_1)} &= 0_{1 \times (3n+m)^2} \\
+\frac{\partial G_8}{\partial \text{vec}(\Lambda_3)} &= 0_{1 \times (n+m)^2} \\
+\frac{\partial G_8}{\partial \Lambda_\alpha} &= \alpha \\
+\frac{\partial G_8}{\partial \Lambda_\beta} &= 0 \\
+\frac{\partial G_8}{\partial \Lambda_\Delta} &= 0 \\
+\frac{\partial G_8}{\partial \text{vec}(\Lambda_Y)} &= 0_{1 \times n^2}
+\end{align}
+
+\subsection{$G_9$: 相補性条件 $\beta \Lambda_\beta = 0$}
+
+\begin{align}
+G_9 = \beta \Lambda_\beta = 0
+\end{align}
+
+導出：
+\begin{align}
+\frac{\partial G_9}{\partial \text{vec}(L)} &= 0_{1 \times nm} \\
+\frac{\partial G_9}{\partial \text{vec}(Y)} &= 0_{1 \times n^2} \\
+\frac{\partial G_9}{\partial \alpha} &= 0 \\
+\frac{\partial G_9}{\partial \beta} &= \Lambda_\beta \\
+\frac{\partial G_9}{\partial \Delta} &= 0 \\
+\frac{\partial G_9}{\partial \text{vec}(\Lambda_1)} &= 0_{1 \times (3n+m)^2} \\
+\frac{\partial G_9}{\partial \text{vec}(\Lambda_3)} &= 0_{1 \times (n+m)^2} \\
+\frac{\partial G_9}{\partial \Lambda_\alpha} &= 0 \\
+\frac{\partial G_9}{\partial \Lambda_\beta} &= \beta \\
+\frac{\partial G_9}{\partial \Lambda_\Delta} &= 0 \\
+\frac{\partial G_9}{\partial \text{vec}(\Lambda_Y)} &= 0_{1 \times n^2}
+\end{align}
+
+\subsection{$G_{10}$: 相補性条件 $\Delta \Lambda_\Delta = 0$}
+
+\begin{align}
+G_{10} = \Delta \Lambda_\Delta = 0
+\end{align}
+
+導出：
+\begin{align}
+\frac{\partial G_{10}}{\partial \text{vec}(L)} &= 0_{1 \times nm} \\
+\frac{\partial G_{10}}{\partial \text{vec}(Y)} &= 0_{1 \times n^2} \\
+\frac{\partial G_{10}}{\partial \alpha} &= 0 \\
+\frac{\partial G_{10}}{\partial \beta} &= 0 \\
+\frac{\partial G_{10}}{\partial \Delta} &= \Lambda_\Delta \\
+\frac{\partial G_{10}}{\partial \text{vec}(\Lambda_1)} &= 0_{1 \times (3n+m)^2} \\
+\frac{\partial G_{10}}{\partial \text{vec}(\Lambda_3)} &= 0_{1 \times (n+m)^2} \\
+\frac{\partial G_{10}}{\partial \Lambda_\alpha} &= 0 \\
+\frac{\partial G_{10}}{\partial \Lambda_\beta} &= 0 \\
+\frac{\partial G_{10}}{\partial \Lambda_\Delta} &= \Delta \\
+\frac{\partial G_{10}}{\partial \text{vec}(\Lambda_Y)} &= 0_{1 \times n^2}
+\end{align}
+
+\subsection{$G_{11}$: 対称性条件 $\Lambda_1 - \Lambda_1^T = 0$}
+
+\begin{align}
+G_{11} = \Lambda_1 - \Lambda_1^T = 0_{(3n+m) \times (3n+m)}
+\end{align}
+
+導出：
+\begin{align}
+\frac{\partial \text{vec}(G_{11})}{\partial \text{vec}(L)} &= 0_{(3n+m)^2 \times nm} \\
+\frac{\partial \text{vec}(G_{11})}{\partial \text{vec}(Y)} &= 0_{(3n+m)^2 \times n^2} \\
+\frac{\partial \text{vec}(G_{11})}{\partial \alpha} &= 0_{(3n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_{11})}{\partial \beta} &= 0_{(3n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_{11})}{\partial \Delta} &= 0_{(3n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_{11})}{\partial \text{vec}(\Lambda_1)} &= I_{(3n+m)^2} - K_{3n+m,3n+m} \in \mathbb{R}^{(3n+m)^2 \times (3n+m)^2} \\
+\frac{\partial \text{vec}(G_{11})}{\partial \text{vec}(\Lambda_3)} &= 0_{(3n+m)^2 \times (n+m)^2} \\
+\frac{\partial \text{vec}(G_{11})}{\partial \Lambda_\alpha} &= 0_{(3n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_{11})}{\partial \Lambda_\beta} &= 0_{(3n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_{11})}{\partial \Lambda_\Delta} &= 0_{(3n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_{11})}{\partial \text{vec}(\Lambda_Y)} &= 0_{(3n+m)^2 \times n^2}
+\end{align}
+
+\subsection{$G_{12}$: 対称性条件 $\Lambda_3 - \Lambda_3^T = 0$}
+
+\begin{align}
+G_{12} = \Lambda_3 - \Lambda_3^T = 0_{(n+m) \times (n+m)}
+\end{align}
+
+導出：
+\begin{align}
+\frac{\partial \text{vec}(G_{12})}{\partial \text{vec}(L)} &= 0_{(n+m)^2 \times nm} \\
+\frac{\partial \text{vec}(G_{12})}{\partial \text{vec}(Y)} &= 0_{(n+m)^2 \times n^2} \\
+\frac{\partial \text{vec}(G_{12})}{\partial \alpha} &= 0_{(n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_{12})}{\partial \beta} &= 0_{(n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_{12})}{\partial \Delta} &= 0_{(n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_{12})}{\partial \text{vec}(\Lambda_1)} &= 0_{(n+m)^2 \times (3n+m)^2} \\
+\frac{\partial \text{vec}(G_{12})}{\partial \text{vec}(\Lambda_3)} &= I_{(n+m)^2} - K_{n+m,n+m} \in \mathbb{R}^{(n+m)^2 \times (n+m)^2} \\
+\frac{\partial \text{vec}(G_{12})}{\partial \Lambda_\alpha} &= 0_{(n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_{12})}{\partial \Lambda_\beta} &= 0_{(n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_{12})}{\partial \Lambda_\Delta} &= 0_{(n+m)^2 \times 1} \\
+\frac{\partial \text{vec}(G_{12})}{\partial \text{vec}(\Lambda_Y)} &= 0_{(n+m)^2 \times n^2}
+\end{align}
+
+\subsection{$G_{13}$: 対称性条件 $Y - Y^T = 0$}
+
+\begin{align}
+G_{13} = Y - Y^T = 0_{n \times n}
+\end{align}
+
+導出：
+\begin{align}
+\frac{\partial \text{vec}(G_{13})}{\partial \text{vec}(L)} &= 0_{n^2 \times nm} \\
+\frac{\partial \text{vec}(G_{13})}{\partial \text{vec}(Y)} &= I_{n^2} - K_{n,n} \in \mathbb{R}^{n^2 \times n^2} \\
+\frac{\partial \text{vec}(G_{13})}{\partial \alpha} &= 0_{n^2 \times 1} \\
+\frac{\partial \text{vec}(G_{13})}{\partial \beta} &= 0_{n^2 \times 1} \\
+\frac{\partial \text{vec}(G_{13})}{\partial \Delta} &= 0_{n^2 \times 1} \\
+\frac{\partial \text{vec}(G_{13})}{\partial \text{vec}(\Lambda_1)} &= 0_{n^2 \times (3n+m)^2} \\
+\frac{\partial \text{vec}(G_{13})}{\partial \text{vec}(\Lambda_3)} &= 0_{n^2 \times (n+m)^2} \\
+\frac{\partial \text{vec}(G_{13})}{\partial \Lambda_\alpha} &= 0_{n^2 \times 1} \\
+\frac{\partial \text{vec}(G_{13})}{\partial \Lambda_\beta} &= 0_{n^2 \times 1} \\
+\frac{\partial \text{vec}(G_{13})}{\partial \Lambda_\Delta} &= 0_{n^2 \times 1} \\
+\frac{\partial \text{vec}(G_{13})}{\partial \text{vec}(\Lambda_Y)} &= 0_{n^2 \times n^2}
+\end{align}
+
+\subsection{$G_{14}$: 相補性条件 $\Lambda_Y Y = 0$}
+
+\begin{align}
+G_{14} = \Lambda_Y Y = 0_{n \times n}
+\end{align}
+
+導出（$D$で微分）：
+\begin{align}
+\frac{\partial \text{vec}(G_{14})}{\partial \text{vec}(L)} &= 0_{n^2 \times nm} \\
+\frac{\partial \text{vec}(G_{14})}{\partial \text{vec}(Y)} &= \Lambda_Y \otimes I_n \in \mathbb{R}^{n^2 \times n^2} \\
+\frac{\partial \text{vec}(G_{14})}{\partial \alpha} &= 0_{n^2 \times 1} \\
+\frac{\partial \text{vec}(G_{14})}{\partial \beta} &= 0_{n^2 \times 1} \\
+\frac{\partial \text{vec}(G_{14})}{\partial \Delta} &= 0_{n^2 \times 1} \\
+\frac{\partial \text{vec}(G_{14})}{\partial \text{vec}(\Lambda_1)} &= 0_{n^2 \times (3n+m)^2} \\
+\frac{\partial \text{vec}(G_{14})}{\partial \text{vec}(\Lambda_3)} &= 0_{n^2 \times (n+m)^2} \\
+\frac{\partial \text{vec}(G_{14})}{\partial \Lambda_\alpha} &= 0_{n^2 \times 1} \\
+\frac{\partial \text{vec}(G_{14})}{\partial \Lambda_\beta} &= 0_{n^2 \times 1} \\
+\frac{\partial \text{vec}(G_{14})}{\partial \Lambda_\Delta} &= 0_{n^2 \times 1} \\
+\frac{\partial \text{vec}(G_{14})}{\partial \text{vec}(\Lambda_Y)} &= K_{n,n} \cdot (I_n \otimes Y) \in \mathbb{R}^{n^2 \times n^2}
+\end{align}
+
+\subsection{$G_{15}$: 対称性条件 $\Lambda_Y - \Lambda_Y^T = 0$}
+
+\begin{align}
+G_{15} = \Lambda_Y - \Lambda_Y^T = 0_{n \times n}
+\end{align}
+
+導出：
+\begin{align}
+\frac{\partial \text{vec}(G_{15})}{\partial \text{vec}(L)} &= 0_{n^2 \times nm} \\
+\frac{\partial \text{vec}(G_{15})}{\partial \text{vec}(Y)} &= 0_{n^2 \times n^2} \\
+\frac{\partial \text{vec}(G_{15})}{\partial \alpha} &= 0_{n^2 \times 1} \\
+\frac{\partial \text{vec}(G_{15})}{\partial \beta} &= 0_{n^2 \times 1} \\
+\frac{\partial \text{vec}(G_{15})}{\partial \Delta} &= 0_{n^2 \times 1} \\
+\frac{\partial \text{vec}(G_{15})}{\partial \text{vec}(\Lambda_1)} &= 0_{n^2 \times (3n+m)^2} \\
+\frac{\partial \text{vec}(G_{15})}{\partial \text{vec}(\Lambda_3)} &= 0_{n^2 \times (n+m)^2} \\
+\frac{\partial \text{vec}(G_{15})}{\partial \Lambda_\alpha} &= 0_{n^2 \times 1} \\
+\frac{\partial \text{vec}(G_{15})}{\partial \Lambda_\beta} &= 0_{n^2 \times 1} \\
+\frac{\partial \text{vec}(G_{15})}{\partial \Lambda_\Delta} &= 0_{n^2 \times 1} \\
+\frac{\partial \text{vec}(G_{15})}{\partial \text{vec}(\Lambda_Y)} &= I_{n^2} - K_{n,n} \in \mathbb{R}^{n^2 \times n^2}
+\end{align}
+
+\section{線形システムの構築}
+
+すべての制約をまとめると、以下の線形システムが得られる：
+
+\begin{align}
+H \begin{bmatrix}
+\frac{d\text{vec}(L)}{d\text{vec}(D)} \\
+\frac{d\text{vec}(Y)}{d\text{vec}(D)} \\
+\frac{d\alpha}{d\text{vec}(D)} \\
+\frac{d\beta}{d\text{vec}(D)} \\
+\frac{d\Delta}{d\text{vec}(D)} \\
+\frac{d\text{vec}(\Lambda_1)}{d\text{vec}(D)} \\
+\frac{d\text{vec}(\Lambda_3)}{d\text{vec}(D)} \\
+\frac{d\Lambda_\alpha}{d\text{vec}(D)} \\
+\frac{d\Lambda_\beta}{d\text{vec}(D)} \\
+\frac{d\Lambda_\Delta}{d\text{vec}(D)} \\
+\frac{d\text{vec}(\Lambda_Y)}{d\text{vec}(D)}
+\end{bmatrix} = -\begin{bmatrix}
+\frac{\partial G_5}{\partial \text{vec}(D)} \\
+\frac{\partial G_1}{\partial \text{vec}(D)} \\
+\frac{\partial G_2}{\partial \text{vec}(D)} \\
+\frac{\partial G_3}{\partial \text{vec}(D)} \\
+\frac{\partial G_4}{\partial \text{vec}(D)} \\
+\frac{\partial G_6}{\partial \text{vec}(D)} \\
+\frac{\partial G_7}{\partial \text{vec}(D)} \\
+\frac{\partial G_8}{\partial \text{vec}(D)} \\
+\frac{\partial G_9}{\partial \text{vec}(D)} \\
+\frac{\partial G_{10}}{\partial \text{vec}(D)} \\
+\frac{\partial G_{11}}{\partial \text{vec}(D)} \\
+\frac{\partial G_{12}}{\partial \text{vec}(D)} \\
+\frac{\partial G_{13}}{\partial \text{vec}(D)} \\
+\frac{\partial G_{14}}{\partial \text{vec}(D)} \\
+\frac{\partial G_{15}}{\partial \text{vec}(D)}
+\end{bmatrix}
+\end{align}
+
+ここで、$H$は各$\frac{\partial G_i}{\partial \bm{x}}$を縦に並べた行列である。各$\frac{\partial G_i}{\partial \text{vec}(D)}$は行列であり、右辺全体$B$も行列である。
+
+\section{勾配の計算}
+
+線形システムを解くことで、$\frac{d\Delta}{d\text{vec}(D)}$が得られる。これは目的関数の勾配に対応する。実際の使用では、$\frac{d\Delta}{d\text{vec}(D)}$を$\mathbb{R}^{(2n+m) \times T}$の形状にreshapeして、$\frac{d\Delta}{dD}$として扱う。
+
+\end{document}

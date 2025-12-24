@@ -48,10 +48,10 @@ Phi  = [Phi11 Phi12; Phi12' Phi22];
 % Constraints
 % -------------------------
 
-tolerance = 1e-8;
+tolerance = 1e-10;
 
 % 制約を個別に定義（dual取得のため）
-const_1 = [F1 - F2 >= 0];  % Lambda1に対応
+const_1 = [F1 - alpha*F2 >= 0];  % Lambda1に対応 (F2 = G*Phi*G'はalphaを含まない)
 const_2 = [F3 >= tolerance*eye(n+m)];  % Lambda3に対応
 const_alpha = [alpha >= 0];  % Lambda_alphaに対応
 const_beta = [beta >= tolerance];  % Lambda_betaに対応
@@ -115,6 +115,8 @@ sol.Lambda_beta = dual(const_beta);  % beta >= tolerance のdual（スカラー�
 sol.Lambda_tDelta = dual(const_tDelta_lower);  % tDelta >= tolerance のdual（スカラー）
 % 相補性: Lambda_tDelta * (tDelta - tolerance) = 0
 % 注意: const_tDelta_upperのdualは通常は0（上界制約がactiveでない限り）
-% 必要に応じて sol.Lambda_tDelta_upper = dual(const_tDelta_upper); も取得可能
-
+sol.Lambda_Y = dual(const_Y);  % Y >= tolerance*eye(n) のdual（サイズ: n × n）
+% 相補性: Lambda_Y * (Y - tolerance*eye(n)) = 0
+sol.Lambda_tDelta_upper = dual(const_tDelta_upper);  % (1 - tolerance)^2 >= tDelta のdual（スカラー）
+% 相補性: Lambda_tDelta_upper * ((1 - tolerance)^2 - tDelta) = 0
 end

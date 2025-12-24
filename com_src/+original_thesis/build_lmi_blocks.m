@@ -12,8 +12,8 @@ Zmn  = zeros(m,n);
 % ---------- (12) Left big symmetric block ----------
 % 論文の数式(12)に従う:
 % - row1の(1,1)ブロック: Y - δ²BB^T - βI, ここでtDelta = δ²なので tDelta*B*B'
-% - F2の符号: 論文では F1 - α * G * Phi * G' >= 0
-%   したがって、F2 = alpha*(G*Phi*G')として、F1 - F2 >= 0が正しい制約になる
+% - F2の定義: F2 = G * Phi * G' (alphaを含まない)
+% - 制約: F1 - α * F2 >= 0 (つまり F1 - α * (G*Phi*G') >= 0)
 row1 = [ Y - tDelta*(B*B') - beta*eye(n),  Znn,  B*L,    Znm ];
 row2 = [ Znn,                          Znn,  Y,    Znm ];
 row3 = [ L'*B',                          Y',  Y,    L' ];
@@ -24,8 +24,8 @@ F1 = [ row1;
     row3;
     row4 ];
 
-% data-dependent term: G * Phi * G'
-F2 = alpha*(G*Phi*G');
+% data-dependent term: G * Phi * G' (alphaを含まない)
+F2 = G*Phi*G';
 
 F3 = [Y , L';
     L, eye(m) ];

@@ -13,7 +13,8 @@ sol.dLambda3 = (-implicit.helper.dF3_dL(n,m))';
 sol.Lambda_Alpha = sparse(nm,1);
 sol.Lambda_Beta = sparse(nm,1);
 sol.Lambda_tDelta = sparse(nm,1);
+sol.Lambda_Y = sparse(nm,n*n);
 sol.Data = sparse(nm,T*(2*n+m));
 
-sol.G1_row_without_Data = [sol.dL, sol.dY, sol.dAlpha, sol.dBeta, sol.dtDelta, sol.dLambda1, sol.dLambda3, sol.Lambda_Alpha, sol.Lambda_Beta, sol.Lambda_tDelta];
+sol.G1_row_without_Data = [sol.dL, sol.dY, sol.dAlpha, sol.dBeta, sol.dtDelta, sol.dLambda1, sol.dLambda3, sol.Lambda_Alpha, sol.Lambda_Beta, sol.Lambda_tDelta, sol.Lambda_Y];
 end

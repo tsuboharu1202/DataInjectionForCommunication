@@ -87,18 +87,18 @@ Lambda3 = sol.Lambda3;
 Lambda_alpha = sol.Lambda_alpha;
 Lambda_beta = sol.Lambda_beta;
 Lambda_tDelta = sol.Lambda_tDelta;
-
+Lambda_Y = sol.Lambda_Y;
 fprintf('  Lambda1: %dx%d, Lambda3: %dx%d\n', size(Lambda1,1), size(Lambda1,2), size(Lambda3,1), size(Lambda3,2));
 fprintf('  Lambda_alpha=%e, Lambda_beta=%e, Lambda_tDelta=%e\n', Lambda_alpha, Lambda_beta, Lambda_tDelta);
 
 % KKT条件の確認（相補性条件）
-% Lambda1 * (F1 - F2) = 0 (近似的に)
+% Lambda1 * (F1 - alpha*F2) = 0 (近似的に) (F2 = G*Phi*G'はalphaを含まない)
 tolerance = 1e-6;
-F1_minus_F2 = F1 - F2;
-compl_slack_1 = Lambda1 * F1_minus_F2;
+F1_minus_alphaF2 = F1 - alpha_val*F2;
+compl_slack_1 = Lambda1 * F1_minus_alphaF2;
 compl_slack_3 = Lambda3 * (F3 - tolerance*eye(n+m));
 fprintf('  相補性条件チェック:\n');
-fprintf('    ||Lambda1*(F1-F2)|| = %e (0に近いべき)\n', norm(compl_slack_1(:)));
+fprintf('    ||Lambda1*(F1-alpha*F2)|| = %e (0に近いべき)\n', norm(compl_slack_1(:)));
 fprintf('    ||Lambda3*(F3-tol*I)|| = %e (0に近いべき)\n', norm(compl_slack_3(:)));
 
 % ============================================
@@ -109,8 +109,9 @@ fprintf('\n4. Implicit differentiationで勾配計算...\n');
 try
     % dtDelta_dDを計算
     dtDelta_dD_result = implicit.dtDelta_dD(n, m, T, B, G, Phi, ...
-        Lambda1, F2, Lambda3, F3, ...
-        alpha_val, Lambda_alpha, beta_val, Lambda_beta, tDelta_val, Lambda_tDelta);
+        Lambda1, F1, F2, Lambda3, F3, ...
+        alpha_val, Lambda_alpha, beta_val, Lambda_beta, tDelta_val, Lambda_tDelta, Lambda_Y, ...
+        Y_val);
     
     fprintf('  勾配計算成功！\n');
     fprintf('  dtDelta_dDのサイズ: %dx%d\n', size(dtDelta_dD_result,1), size(dtDelta_dD_result,2));
