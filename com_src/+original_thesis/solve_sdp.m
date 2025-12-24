@@ -50,14 +50,23 @@ Phi  = [Phi11 Phi12; Phi12' Phi22];
 
 tolerance = 1e-8;
 
-const_1 = [F1 - F2 >= 0];
-const_2 = [F3 >= tolerance*eye(n+m)];
-
+% 制約を個別に定義（dual取得のため）
+const_1 = [F1 - F2 >= 0];  % Lambda1に対応
+const_2 = [F3 >= tolerance*eye(n+m)];  % Lambda3に対応
+const_alpha = [alpha >= 0];  % Lambda_alphaに対応
+const_beta = [beta >= tolerance];  % Lambda_betaに対応
+const_tDelta_lower = [tDelta >= tolerance];  % Lambda_tDelta_lowerに対応
+const_Y = [Y >= tolerance*eye(n)];  % Yの制約（必要に応じて）
+const_tDelta_upper = [(1 - tolerance)^2 >= tDelta];  % tDeltaの上界制約
 
 constr  = [];
 constr  = [constr, const_1];
 constr  = [constr, const_2];
-constr  = [constr, alpha >= 0, beta >= tolerance, tDelta >= tolerance, Y >= tolerance*eye(n), (1 - tolerance)^2 >= tDelta];
+constr  = [constr, const_alpha];
+constr  = [constr, const_beta];
+constr  = [constr, const_tDelta_lower];
+constr  = [constr, const_Y];
+constr  = [constr, const_tDelta_upper];
 
 % Objective: maximize δ  <=>  minimize tDelta
 obj = -tDelta;
@@ -85,4 +94,27 @@ sol.objective = value(obj);
 
 K = sol.L/sol.Y;
 sol.K = K;
+
+% -------------------------
+% Dual values (Lagrange multipliers)
+% -------------------------
+% KKT条件について：
+% - 制約 g(x) >= 0 に対して、ラグランジュ乗数 λ >= 0
+% - 相補性条件: λ * g(x) = 0
+% - YALMIPのdual関数は、制約 g(x) >= 0 に対して λ >= 0 を返す
+%
+% 制約の順序に注意：const_1, const_2, const_alpha, const_beta, const_tDelta_lower, const_Y, const_tDelta_upper
+sol.Lambda1 = dual(const_1);  % F1 - F2 >= 0 のdual（サイズ: (3*n+m) × (3*n+m)）
+% 相補性: Lambda1 * (F1 - F2) = 0
+sol.Lambda3 = dual(const_2);  % F3 >= tolerance*eye(n+m) のdual（サイズ: (n+m) × (n+m)）
+% 相補性: Lambda3 * (F3 - tolerance*I) = 0
+sol.Lambda_alpha = dual(const_alpha);  % alpha >= 0 のdual（スカラー）
+% 相補性: Lambda_alpha * alpha = 0
+sol.Lambda_beta = dual(const_beta);  % beta >= tolerance のdual（スカラー）
+% 相補性: Lambda_beta * (beta - tolerance) = 0
+sol.Lambda_tDelta = dual(const_tDelta_lower);  % tDelta >= tolerance のdual（スカラー）
+% 相補性: Lambda_tDelta * (tDelta - tolerance) = 0
+% 注意: const_tDelta_upperのdualは通常は0（上界制約がactiveでない限り）
+% 必要に応じて sol.Lambda_tDelta_upper = dual(const_tDelta_upper); も取得可能
+
 end

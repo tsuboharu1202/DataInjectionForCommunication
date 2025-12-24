@@ -1,7 +1,7 @@
 classdef Const
     properties (Constant)
         %　全体jのステップ数
-        SAMPLE_COUNT = 100
+        SAMPLE_COUNT = 20
         
         % 数値微分の既定ステップ（相対スケール）
         FD_STEP = eps^(1/3)

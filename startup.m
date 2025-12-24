@@ -17,6 +17,7 @@ addpath(genpath(fullfile(projroot,'com_src')));
 % 衝突回避
 clear cfg
 clear classes
+clear functions  % 関数キャッシュをクリア（ForLQRとの混同を防ぐ）
 rehash toolboxcache
 
 % 動作確認（コメントアウト可）
