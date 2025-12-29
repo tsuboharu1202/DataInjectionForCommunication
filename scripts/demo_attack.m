@@ -40,7 +40,7 @@ fprintf('\n=== 攻撃の実行 ===\n');
 
 % % 1. DIRECT_DGSM_EV
 fprintf('\n1. DIRECT_DGSM_EV 攻撃...\n');
-[X_dgsm, Z_dgsm, U_dgsm] = attack.execute_attack(data, cfg.AttackType.DIRECT_DGSM_EV);
+[X_dgsm, Z_dgsm, U_dgsm] = attack.execute_attack(data, cfg.AttackType.IMPLICIT_IDGSM_RHO_LARGE);
 sd_dgsm = datasim.SystemData(A,B,X_dgsm,Z_dgsm,U_dgsm,data.Phi11,data.Phi12,data.Phi22);
 [~, K_dgsm, ~, ~, ~] = sd_dgsm.solve_sdp_on_data();
 rho_dgsm = max(abs(eig(A+B*K_dgsm)));

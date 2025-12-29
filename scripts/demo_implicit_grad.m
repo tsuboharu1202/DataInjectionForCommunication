@@ -92,10 +92,10 @@ fprintf('  Lambda1: %dx%d, Lambda3: %dx%d\n', size(Lambda1,1), size(Lambda1,2), 
 fprintf('  Lambda_alpha=%e, Lambda_beta=%e, Lambda_tDelta=%e\n', Lambda_alpha, Lambda_beta, Lambda_tDelta);
 
 % KKT条件の確認（相補性条件）
-% Lambda1 * (F1 - alpha*F2) = 0 (近似的に) (F2 = G*Phi*G'はalphaを含まない)
+% Lambda1 * (F1 - alpha*F2) = 0 (近似的に)
 tolerance = 1e-6;
-F1_minus_alphaF2 = F1 - alpha_val*F2;
-compl_slack_1 = Lambda1 * F1_minus_alphaF2;
+F1_minus_F2 = F1 - alpha_val*F2;
+compl_slack_1 = Lambda1 * F1_minus_F2;
 compl_slack_3 = Lambda3 * (F3 - tolerance*eye(n+m));
 fprintf('  相補性条件チェック:\n');
 fprintf('    ||Lambda1*(F1-alpha*F2)|| = %e (0に近いべき)\n', norm(compl_slack_1(:)));

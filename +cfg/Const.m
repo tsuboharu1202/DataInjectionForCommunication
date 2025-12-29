@@ -7,11 +7,11 @@ classdef Const
         FD_STEP = eps^(1/3)
         
         % 攻撃側制約
-        ATTACKER_UPPERLIMIT = 0.005
+        ATTACKER_UPPERLIMIT = 1e-4
         
         
-        EPSILON = 0.02
-        NOISE_BOUND = 10^(-4)
+        EPSILON = 1e-3
+        NOISE_BOUND = 1e-4
         
         % 乱数生成
         SEED = []

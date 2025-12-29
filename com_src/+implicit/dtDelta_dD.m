@@ -51,8 +51,79 @@ Mtarix_y = [
     G14_sol.Data;
     G15_sol.Data];
 
-Matrix_H_full = full(Matrix_H);
-matrix_x = Matrix_H_full \ (-full(Mtarix_y));
+% sdpvarが含まれている可能性があるため、value()で数値型に変換
+Matrix_H_full = double(full(Matrix_H));
+Matrix_y_full = double(full(Mtarix_y));
+
+rank_H = double(rank(Matrix_H_full));
+n_rows = double(size(Matrix_H_full, 1));
+n_cols = double(size(Matrix_H_full, 2));
+fprintf('Matrix_H: size=[%d,%d], rank=%d\n', n_rows, n_cols, rank_H);
+if rank_H == n_cols
+    fprintf('  解は一意です (rank = 列数)\n');
+else
+    fprintf('  解は一意ではありません (自由度: %d = 列数 %d - rank %d)\n', n_cols - rank_H, n_cols, rank_H);
+    
+    % Null space分析
+    fprintf('\n=== Null Space分析 ===\n');
+    s = svd(Matrix_H_full);
+    fprintf('SVD: 最小特異値 = %e, 最大特異値 = %e, 条件数 = %e\n', min(s), max(s), max(s)/min(s));
+    fprintf('下位10個の特異値:\n');
+    fprintf('  %e\n', s(end-9:end));
+    
+    % Null spaceを計算
+    tol_null = 1e-6;
+    nullvec = null(Matrix_H_full, tol_null);
+    if ~isempty(nullvec)
+        fprintf('Null space次元: %d (tol=%e)\n', size(nullvec, 2), tol_null);
+        
+        % 各変数ブロックのサイズ
+        n_L = n*m;
+        n_Y = n*n;
+        n_alpha = 1;
+        n_beta = 1;
+        n_tDelta = 1;
+        n_Lambda1 = (3*n+m)*(3*n+m);
+        n_Lambda3 = (n+m)*(n+m);
+        n_Lambda_alpha = 1;
+        n_Lambda_beta = 1;
+        n_Lambda_tDelta = 1;
+        n_Lambda_Y = n*n;
+        
+        % 各ブロックのインデックス
+        idx_L = 1:n_L;
+        idx_Y = n_L + (1:n_Y);
+        idx_alpha = n_L + n_Y + 1;
+        idx_beta = n_L + n_Y + n_alpha + 1;
+        idx_tDelta = n_L + n_Y + n_alpha + n_beta + 1;
+        idx_Lambda1 = n_L + n_Y + n_alpha + n_beta + n_tDelta + (1:n_Lambda1);
+        idx_Lambda3 = idx_Lambda1(end) + (1:n_Lambda3);
+        idx_Lambda_alpha = idx_Lambda3(end) + 1;
+        idx_Lambda_beta = idx_Lambda_alpha + 1;
+        idx_Lambda_tDelta = idx_Lambda_beta + 1;
+        idx_Lambda_Y = idx_Lambda_tDelta + (1:n_Lambda_Y);
+        
+        % 各null vectorの各ブロックでのノルム
+        fprintf('\n各変数ブロックでのnull space成分のノルム:\n');
+        for i = 1:size(nullvec, 2)
+            fprintf('  Null vector %d:\n', i);
+            fprintf('    dL:        %e\n', norm(nullvec(idx_L, i)));
+            fprintf('    dY:        %e\n', norm(nullvec(idx_Y, i)));
+            fprintf('    dAlpha:    %e\n', norm(nullvec(idx_alpha, i)));
+            fprintf('    dBeta:     %e\n', norm(nullvec(idx_beta, i)));
+            fprintf('    dtDelta:   %e\n', norm(nullvec(idx_tDelta, i)));
+            fprintf('    dLambda1:  %e\n', norm(nullvec(idx_Lambda1, i)));
+            fprintf('    dLambda3:  %e\n', norm(nullvec(idx_Lambda3, i)));
+            fprintf('    dLambda_alpha: %e\n', norm(nullvec(idx_Lambda_alpha, i)));
+            fprintf('    dLambda_beta:  %e\n', norm(nullvec(idx_Lambda_beta, i)));
+            fprintf('    dLambda_tDelta: %e\n', norm(nullvec(idx_Lambda_tDelta, i)));
+            fprintf('    dLambda_Y: %e\n', norm(nullvec(idx_Lambda_Y, i)));
+        end
+    else
+        fprintf('Null spaceは空です (tol=%e)\n', tol_null);
+    end
+end
+matrix_x = Matrix_H_full \ (-Matrix_y_full);
 
 % 回の1行目の要素がdtDelta_dDの値
 dtDelta_dD = matrix_x(1,:);

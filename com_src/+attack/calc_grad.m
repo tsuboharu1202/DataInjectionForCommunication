@@ -52,7 +52,7 @@ function [gradX_pi, gradZ_pi, gradU_pi] = calc_grad(sd,opts)
     % ===== ローカル関数 =====
     function rho = calc_rho(sysd)
         % SDP → K → 支配固有値 λ（絶対値最大のもの）
-        [sol, K, Y, L, diagnostics] = original_thesis.solve_sdp(sysd);
+        [sol, K, Y, L, diagnostics] = solve_quantized_sdp(sysd);
         % tDelta = sol.tDelta;                 % 複素の場合あり
         Ac = sysd.A + sysd.B*K;
         lambda = eig(Ac);

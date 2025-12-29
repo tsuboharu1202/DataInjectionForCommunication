@@ -13,6 +13,7 @@ Z     = data.Z;     % n×T
 Xm     = data.X;    % n×T
 Um     = data.U;    % m×T  (m=1 でも可)
 
+Gamma_Matrix = [Um;Xm];
 
 Phi11  = data.Phi11;
 Phi12  = data.Phi12;
@@ -48,7 +49,7 @@ Phi  = [Phi11 Phi12; Phi12' Phi22];
 % Constraints
 % -------------------------
 
-tolerance = 1e-10;
+tolerance = 1e-8;
 
 % 制約を個別に定義（dual取得のため）
 const_1 = [F1 - alpha*F2 >= 0];  % Lambda1に対応 (F2 = G*Phi*G'はalphaを含まない)
@@ -69,7 +70,8 @@ constr  = [constr, const_Y];
 constr  = [constr, const_tDelta_upper];
 
 % Objective: maximize δ  <=>  minimize tDelta
-obj = -tDelta;
+% pi_matrix = eye(T) - pinv(Gamma_Matrix)*Gamma_Matrix;
+obj = -tDelta + 1e-6*norm(Y, 'fro') + 1e-6*norm(L, 'fro');
 
 params = sdpsettings('solver', opts.solver, 'verbose', opts.verbose);
 diagnostics = optimize(constr, obj, params);
@@ -104,19 +106,31 @@ sol.K = K;
 % - YALMIPのdual関数は、制約 g(x) >= 0 に対して λ >= 0 を返す
 %
 % 制約の順序に注意：const_1, const_2, const_alpha, const_beta, const_tDelta_lower, const_Y, const_tDelta_upper
-sol.Lambda1 = dual(const_1);  % F1 - F2 >= 0 のdual（サイズ: (3*n+m) × (3*n+m)）
-% 相補性: Lambda1 * (F1 - F2) = 0
-sol.Lambda3 = dual(const_2);  % F3 >= tolerance*eye(n+m) のdual（サイズ: (n+m) × (n+m)）
-% 相補性: Lambda3 * (F3 - tolerance*I) = 0
-sol.Lambda_alpha = dual(const_alpha);  % alpha >= 0 のdual（スカラー）
-% 相補性: Lambda_alpha * alpha = 0
-sol.Lambda_beta = dual(const_beta);  % beta >= tolerance のdual（スカラー）
-% 相補性: Lambda_beta * (beta - tolerance) = 0
-sol.Lambda_tDelta = dual(const_tDelta_lower);  % tDelta >= tolerance のdual（スカラー）
-% 相補性: Lambda_tDelta * (tDelta - tolerance) = 0
-% 注意: const_tDelta_upperのdualは通常は0（上界制約がactiveでない限り）
-sol.Lambda_Y = dual(const_Y);  % Y >= tolerance*eye(n) のdual（サイズ: n × n）
-% 相補性: Lambda_Y * (Y - tolerance*eye(n)) = 0
-sol.Lambda_tDelta_upper = dual(const_tDelta_upper);  % (1 - tolerance)^2 >= tDelta のdual（スカラー）
-% 相補性: Lambda_tDelta_upper * ((1 - tolerance)^2 - tDelta) = 0
+try
+    sol.Lambda1 = dual(const_1);  % F1 - α*F2 >= 0 のdual（サイズ: (3*n+m) × (3*n+m)）
+    % 相補性: Lambda1 * (F1 - α*F2) = 0
+    sol.Lambda3 = dual(const_2);  % F3 >= tolerance*eye(n+m) のdual（サイズ: (n+m) × (n+m)）
+    % 相補性: Lambda3 * (F3 - tolerance*I) = 0
+    sol.Lambda_alpha = dual(const_alpha);  % alpha >= 0 のdual（スカラー）
+    % 相補性: Lambda_alpha * alpha = 0
+    sol.Lambda_beta = dual(const_beta);  % beta >= tolerance のdual（スカラー）
+    % 相補性: Lambda_beta * (beta - tolerance) = 0
+    sol.Lambda_tDelta = dual(const_tDelta_lower);  % tDelta >= tolerance のdual（スカラー）
+    % 相補性: Lambda_tDelta * (tDelta - tolerance) = 0
+    % 注意: const_tDelta_upperのdualは通常は0（上界制約がactiveでない限り）
+    sol.Lambda_Y = dual(const_Y);  % Y >= tolerance*eye(n) のdual（サイズ: n × n）
+    % 相補性: Lambda_Y * (Y - tolerance*eye(n)) = 0
+    sol.Lambda_tDelta_upper = dual(const_tDelta_upper);  % (1 - tolerance)^2 >= tDelta のdual（スカラー）
+    % 相補性: Lambda_tDelta_upper * ((1 - tolerance)^2 - tDelta) = 0
+catch ME
+    % dual取得に失敗した場合、ゼロ行列/スカラーで初期化
+    warning('solve_sdp:dualFailed', 'Failed to retrieve dual variables: %s. Using zeros.', ME.message);
+    sol.Lambda1 = zeros(3*n+m, 3*n+m);
+    sol.Lambda3 = zeros(n+m, n+m);
+    sol.Lambda_alpha = 0;
+    sol.Lambda_beta = 0;
+    sol.Lambda_tDelta = 0;
+    sol.Lambda_Y = zeros(n, n);
+    sol.Lambda_tDelta_upper = 0;
+end
 end
