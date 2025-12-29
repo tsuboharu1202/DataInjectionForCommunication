@@ -77,9 +77,13 @@ classdef SystemData
         % これが最も荒い量子化下界
         function rho_rough = rough_quantization_lower_bound(obj)
             eigA = eig(obj.A);
-            unstable_eigA = abs(eigA(abs(eigA) > 1));
-            rho_rough = prod(unstable_eigA);
-            rho_rough = 1/rho_rough;
+            gamma = 1;
+            for i = 1:numel(eigA)
+                if abs(eigA(i)) > 1
+                    gamma = gamma * abs(eigA(i));
+                end
+            end
+            rho_rough = 1/gamma;
         end
         
     end

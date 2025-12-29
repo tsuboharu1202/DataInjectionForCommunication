@@ -32,8 +32,8 @@ X = zeros(n,T); Z = zeros(n,T);
 x = x0;
 for t = 1:T
     X(:,t) = x;
-    % x = Ac*x + B*V(:,t) + 0.01*randn(n,1);
-    x = Ac*x + B*V(:,t);
+    x = Ac*x + B*V(:,t) + 0.0001*randn(n,1);
+    % x = Ac*x + B*V(:,t);
     Z(:,t) = x;
 end
 

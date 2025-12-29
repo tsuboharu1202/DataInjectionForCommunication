@@ -76,21 +76,28 @@ obj = -tDelta + 1e-6*norm(Y, 'fro') + 1e-6*norm(L, 'fro');
 params = sdpsettings('solver', opts.solver, 'verbose', opts.verbose);
 diagnostics = optimize(constr, obj, params);
 
+% -------------------------
+% 最適化結果のチェック
+% -------------------------
+sol.status = diagnostics.problem;
+
 if diagnostics.problem ~= 0
-    warning('Optimization problem status: %d - %s', diagnostics.problem, diagnostics.info);
+    % 解けなかった場合はエラーを出す
+    error('solve_sdp:OptimizationFailed', ...
+        '最適化が解けませんでした。status: %d, info: %s', ...
+        diagnostics.problem, diagnostics.info);
 end
 
 % -------------------------
 % Output pack
 % -------------------------
-sol.status    = diagnostics.problem;
 sol.Y         = value(Y);
 sol.L         = value(L);
 sol.alpha     = value(alpha);
 sol.beta      = value(beta);
-sol.tDelta    = value(tDelta);
 % tDelta = δ^{2}なので、δ = (tDelta)^(1/2)
 delta = sqrt(value(tDelta));
+sol.delta     = delta;
 sol.rho = (1-delta)/(1+delta);  % Theorem 3: ρ = (1-δ)/(1+δ)
 sol.objective = value(obj);
 
@@ -123,14 +130,8 @@ try
     sol.Lambda_tDelta_upper = dual(const_tDelta_upper);  % (1 - tolerance)^2 >= tDelta のdual（スカラー）
     % 相補性: Lambda_tDelta_upper * ((1 - tolerance)^2 - tDelta) = 0
 catch ME
-    % dual取得に失敗した場合、ゼロ行列/スカラーで初期化
-    warning('solve_sdp:dualFailed', 'Failed to retrieve dual variables: %s. Using zeros.', ME.message);
-    sol.Lambda1 = zeros(3*n+m, 3*n+m);
-    sol.Lambda3 = zeros(n+m, n+m);
-    sol.Lambda_alpha = 0;
-    sol.Lambda_beta = 0;
-    sol.Lambda_tDelta = 0;
-    sol.Lambda_Y = zeros(n, n);
-    sol.Lambda_tDelta_upper = 0;
+    % dual取得に失敗した場合はエラーを出す（適当な値を返さない）
+    error('solve_sdp:DualFailed', ...
+        'Dual変数の取得に失敗しました: %s', ME.message);
 end
 end
