@@ -3,9 +3,9 @@ function dtDelta_dD = dtDelta_dD(n,m,T,B,X,Z,U,Pi,gamma,Gamma,L,Lambda,Lambda_P,
 
 G1_sol = implicit_regularization.G_grad.G1_merge(n,m,B,T);
 G2_sol = implicit_regularization.G_grad.G2_merge(n,m,T,X,Z,U,Pi,gamma,Gamma,L,Lambda,Lambda_P);
-G3_sol = implicit_regularization.G_grad.G3_merge(n,m,T,X,Z,U,F1,L,Lambda);
+G3_sol = implicit_regularization.G_grad.G3_merge(n,m,T,X,Z,U,F1,L,Lambda,B);
 G4_sol = implicit_regularization.G_grad.G4_merge(n,m,T);
-G5_sol = implicit_regularization.G_grad.G5_merge(n,m,X,Lambda_P,L);
+G5_sol = implicit_regularization.G_grad.G5_merge(n,m,T,X,Lambda_P,L);
 G6_sol = implicit_regularization.G_grad.G6_merge(n,m,T);
 G7_sol = implicit_regularization.G_grad.G7_merge(n,m,T,X,L);
 fprintf('G1_sol.G1_row_without_Data: %dx%d\n', size(G1_sol.G1_row_without_Data,1), size(G1_sol.G1_row_without_Data,2));
