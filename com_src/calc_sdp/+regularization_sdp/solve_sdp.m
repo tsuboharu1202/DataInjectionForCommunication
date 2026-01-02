@@ -1,7 +1,7 @@
-function [sol, K, delta_val, L_val, diagnostics] = solve_sdp(data, opts)
+function [sol, K, delta_val, L_val, diagnostics] = solve_sdp(data, gamma, opts)
 
-
-if nargin < 2 || isempty(opts), opts = struct(); end
+if nargin < 2 || isempty(gamma), gamma = 1e5; end
+if nargin < 3 || isempty(opts), opts = struct(); end
 if ~isfield(opts,'verbose'),   opts.verbose   = 0;     end
 if ~isfield(opts,'solver'),    opts.solver    = 'mosek'; end
 
@@ -44,17 +44,17 @@ tolerance = 1e-8;
 
 % 制約を個別に定義（dual取得のため）
 const_1 = [const_mat >= 0];
-const_2 = [Xm*L == (Xm*L)'];
-const_3 = [Xm_L_Sym >= tolerance*eye(n)];
+const_2 = [Xm_L_Sym >= tolerance*eye(n)];
+const_3 = [Xm*L == (Xm*L)'];
 
 constr  = [];
 constr  = [constr, const_1];
 constr  = [constr, const_2];
 constr  = [constr, const_3];
-constr  = [constr, delta >= tolerance];
+% constr  = [constr, delta >= tolerance];
 % Objective: maximize δ  <=>  minimize tDelta
 pi_matrix = eye(T) - pinv(Gamma_Matrix)*Gamma_Matrix;
-obj = -delta + 1e5*norm(pi_matrix*L, 'fro');
+obj = -delta + gamma*norm(pi_matrix*L, 'fro');
 
 params = sdpsettings('solver', opts.solver, 'verbose', opts.verbose);
 diagnostics = optimize(constr, obj, params);
@@ -81,6 +81,7 @@ rho_val = (1-delta_val)/(1+delta_val);
 sol.rho = rho_val;
 sol.objective = value(obj);
 sol.delta = delta_val;
+sol.F1 = value(const_mat);
 
 K = Um*L_val*(Xm*L_val)^(-1);
 sol.K = K;

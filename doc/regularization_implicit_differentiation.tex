@@ -1,0 +1,301 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+\title{正則化付き量子化制御器設計における\\Implicit Differentiationによる勾配計算}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{問題設定}
+
+\subsection{正則化付きSDP問題の定式化}
+
+正則化付き量子化制御器設計問題は以下のように定式化される：
+
+\begin{align}
+\min_{L, \delta} \quad & -\delta + \gamma \| \Pi L \|_F^2 \label{eq:obj_reg} \\
+\text{subject to} \quad & F_1 \geq 0 \label{eq:const_F1_reg} \\
+& X L \geq \epsilon I_n \label{eq:const_XL_reg} \\
+& X L = (X L)^T \label{eq:const_sym_reg} \\
+& \delta > 0 \label{eq:const_delta_reg}
+\end{align}
+
+ここで、決定変数は：
+\begin{itemize}
+\item $L \in \mathbb{R}^{T \times n}$: 制御パラメータ行列
+\item $\delta \in \mathbb{R}$: スカラー（$\delta > 0$）、量子化パラメータ
+\end{itemize}
+
+パラメータ：
+\begin{itemize}
+\item $X \in \mathbb{R}^{n \times T}$: 状態データ
+\item $Z \in \mathbb{R}^{n \times T}$: 次状態データ
+\item $U \in \mathbb{R}^{m \times T}$: 入力データ
+\item $B \in \mathbb{R}^{n \times m}$: 入力行列
+\item $\gamma > 0$: 正則化パラメータ
+\item $\epsilon > 0$: 数値的安定性のための小さな正定数
+\end{itemize}
+
+\subsection{LMIブロック}
+
+制約行列$F_1$は以下の4×4ブロック行列として定義される：
+
+\begin{align}
+F_1 &= \begin{bmatrix}
+(X L)_\text{sym} & (Z L)^T & 0_{n \times m} & (U L)^T \\
+Z L & (X L)_\text{sym} & \delta B & 0_{n \times m} \\
+0_{m \times n} & \delta B^T & I_m & 0_{m \times m} \\
+U L & 0_{m \times n} & 0_{m \times m} & I_m
+\end{bmatrix} \in \mathbb{R}^{(2n+2m) \times (2n+2m)} \label{eq:F1_reg}
+\end{align}
+
+ここで、$(X L)_\text{sym} = \frac{1}{2}(X L + (X L)^T)$は対称化された行列である。
+
+\subsection{正則化項}
+
+正則化項は以下のように定義される：
+
+\begin{align}
+\Pi &= I_T - \Gamma^+ \Gamma \label{eq:Pi_def} \\
+\Gamma &= \begin{bmatrix} U \\ X \end{bmatrix} \in \mathbb{R}^{(m+n) \times T} \label{eq:Gamma_def}
+\end{align}
+
+ここで、$\Gamma^+$は$\Gamma$のMoore-Penrose疑似逆行列である。$\Pi$は$\Gamma$の零空間への射影行列であり、$\Pi L$のFrobeniusノルムを最小化することで、データ空間に射影されない成分を抑制する。
+
+\section{Lagrangian関数}
+
+Lagrangian関数は以下のように定義される：
+
+\begin{align}
+\mathcal{L} &= -\delta + \gamma \| \Pi L \|_F^2 \label{eq:Lagrangian_reg} \\
+&\quad - \text{tr}(F_1 \Lambda_1^T) \label{eq:Lagrangian_F1_reg} \\
+&\quad - \text{tr}((X L - \epsilon I_n) \Lambda_2^T) \label{eq:Lagrangian_XL_reg} \\
+&\quad - \text{tr}((X L - (X L)^T) \Lambda_P^T) \label{eq:Lagrangian_sym_reg}
+\end{align}
+
+ここで、ラグランジュ乗数は：
+\begin{itemize}
+\item $\Lambda_1 \in \mathbb{R}^{(2n+2m) \times (2n+2m)}$: $F_1 \geq 0$に対する双対変数
+\item $\Lambda_2 \in \mathbb{R}^{n \times n}$: $X L \geq \epsilon I_n$に対する双対変数
+\item $\Lambda_P \in \mathbb{R}^{n \times n}$: $X L = (X L)^T$に対する双対変数
+\end{itemize}
+
+\textbf{注意：} 実装では$\text{tr}(X \Lambda^T)$の形式を使用する。これは$\text{tr}(\Lambda X)$と等価であるが、微分計算において順序が重要となる。
+
+\section{KKT条件}
+
+最適性条件（KKT条件）は以下の通り：
+
+\subsection{勾配条件（Stationarity Conditions）}
+
+\begin{align}
+G_1 &= \frac{\partial \mathcal{L}}{\partial \delta} = 0 \label{eq:G1_reg} \\
+G_2 &= \frac{\partial \mathcal{L}}{\partial L} = 0_{Tn \times 1} \label{eq:G2_reg}
+\end{align}
+
+\subsection{相補性条件（Complementarity Conditions）}
+
+\begin{align}
+G_3 &: \quad F_1 \Lambda_1^T = 0_{(2n+2m) \times (2n+2m)} \label{eq:G3_reg} \\
+G_5 &: \quad (X L - \epsilon I_n) \Lambda_2^T = 0_{n \times n} \label{eq:G5_reg}
+\end{align}
+
+\subsection{対称性条件（Symmetry Conditions）}
+
+\begin{align}
+G_4 &: \quad \Lambda_1 - \Lambda_1^T = 0_{(2n+2m) \times (2n+2m)} \label{eq:G4_reg} \\
+G_6 &: \quad \Lambda_P - \Lambda_P^T = 0_{n \times n} \label{eq:G6_reg} \\
+G_7 &: \quad X L - (X L)^T = 0_{n \times n} \label{eq:G7_reg}
+\end{align}
+
+\section{各KKT条件の詳細}
+
+\subsection{$G_1$: $\frac{\partial \mathcal{L}}{\partial \delta} = 0$}
+
+\begin{align}
+G_1 &= -1 - \text{tr}\left(\frac{\partial F_1}{\partial \delta} \Lambda_1^T\right) \label{eq:G1_detail}
+\end{align}
+
+$F_1$の$\delta$に関する偏微分は：
+
+\begin{align}
+\frac{\partial F_1}{\partial \delta} &= \begin{bmatrix}
+0_{n \times n} & 0_{n \times n} & 0_{n \times m} & 0_{n \times m} \\
+0_{n \times n} & 0_{n \times n} & B & 0_{n \times m} \\
+0_{m \times n} & B^T & 0_{m \times m} & 0_{m \times m} \\
+0_{m \times n} & 0_{m \times n} & 0_{m \times m} & 0_{m \times m}
+\end{bmatrix} \label{eq:dF1_ddelta}
+\end{align}
+
+したがって：
+
+\begin{align}
+G_1 &= -1 - \text{vec}\left(\frac{\partial F_1}{\partial \delta}\right)^T \text{vec}(\Lambda_1) = 0 \label{eq:G1_final}
+\end{align}
+
+\subsection{$G_2$: $\frac{\partial \mathcal{L}}{\partial L} = 0$}
+
+\begin{align}
+G_2 &= 2\gamma \frac{\partial}{\partial L} \| \Pi L \|_F^2 - \text{tr}\left(\frac{\partial F_1}{\partial L} \Lambda_1^T\right) - \text{tr}\left(\frac{\partial (X L)}{\partial L} (\Lambda_2 + \Lambda_P)^T\right) \label{eq:G2_detail}
+\end{align}
+
+正則化項の微分：
+
+\begin{align}
+\frac{\partial}{\partial L} \| \Pi L \|_F^2 &= \frac{\partial}{\partial L} \text{tr}(L^T \Pi^T \Pi L) = 2 \Pi^T \Pi L = 2 \Pi L \label{eq:dPiL_dL}
+\end{align}
+
+ここで、$\Pi$は対称かつ冪等（$\Pi^2 = \Pi$）であることを用いた。
+
+$F_1$の$L$に関する偏微分は、$F_1$の各ブロックを$L$で微分することで得られる：
+
+\begin{align}
+\frac{\partial F_1}{\partial L} &= \frac{\partial}{\partial L} \begin{bmatrix}
+(X L)_\text{sym} & (Z L)^T & 0 & (U L)^T \\
+Z L & (X L)_\text{sym} & \delta B & 0 \\
+0 & \delta B^T & I_m & 0 \\
+U L & 0 & 0 & I_m
+\end{bmatrix} \label{eq:dF1_dL}
+\end{align}
+
+これをベクトル化すると：
+
+\begin{align}
+\frac{\partial \text{vec}(F_1)}{\partial \text{vec}(L)} = \frac{\partial F_1}{\partial L} \in \mathbb{R}^{(2n+2m)^2 \times Tn} \label{eq:dF1_dL_vec}
+\end{align}
+
+したがって：
+
+\begin{align}
+G_2 &= 2\gamma \text{vec}(\Pi L) - \left(\frac{\partial F_1}{\partial L}\right)^T \text{vec}(\Lambda_1) - \text{vec}(X^T (\Lambda_2 + \Lambda_P)) = 0 \label{eq:G2_final}
+\end{align}
+
+\subsection{$G_3$: 相補性条件 $F_1 \Lambda_1^T = 0$}
+
+相補性条件をデータ$D = [Z^T, X^T, U^T]^T$で微分すると：
+
+\begin{align}
+\frac{\partial}{\partial D} (F_1 \Lambda_1^T) &= \frac{\partial F_1}{\partial D} \Lambda_1^T + F_1 \frac{\partial \Lambda_1^T}{\partial D} = 0 \label{eq:G3_detail}
+\end{align}
+
+ベクトル化すると：
+
+\begin{align}
+\text{vec}\left(\frac{\partial F_1}{\partial D} \Lambda_1^T\right) &= (I_{(2n+2m)} \otimes \Lambda_1) \text{vec}\left(\frac{\partial F_1}{\partial D}\right) \label{eq:G3_vec1} \\
+\text{vec}\left(F_1 \frac{\partial \Lambda_1^T}{\partial D}\right) &= (\Lambda_1 \otimes I_{(2n+2m)}) \text{vec}\left(\frac{\partial \Lambda_1^T}{\partial D}\right) \label{eq:G3_vec2}
+\end{align}
+
+したがって：
+
+\begin{align}
+G_3: \quad (I_{(2n+2m)} \otimes \Lambda_1) \frac{\partial \text{vec}(F_1)}{\partial D} + (\Lambda_1 \otimes I_{(2n+2m)}) \frac{\partial \text{vec}(\Lambda_1^T)}{\partial D} = 0 \label{eq:G3_final}
+\end{align}
+
+\subsection{$G_4$: 対称性条件 $\Lambda_1 - \Lambda_1^T = 0$}
+
+\begin{align}
+G_4: \quad \text{vec}(\Lambda_1) - K_{(2n+2m),(2n+2m)} \text{vec}(\Lambda_1) = (I - K_{(2n+2m),(2n+2m)}) \text{vec}(\Lambda_1) = 0 \label{eq:G4_final}
+\end{align}
+
+ここで、$K_{p,q}$はcommutation行列である。
+
+\subsection{$G_5$: 相補性条件 $(X L - \epsilon I_n) \Lambda_2^T = 0$}
+
+\begin{align}
+G_5: \quad \frac{\partial}{\partial D} ((X L - \epsilon I_n) \Lambda_2^T) = \frac{\partial (X L)}{\partial D} \Lambda_2^T + (X L - \epsilon I_n) \frac{\partial \Lambda_2^T}{\partial D} = 0 \label{eq:G5_final}
+\end{align}
+
+\subsection{$G_6$: 対称性条件 $\Lambda_P - \Lambda_P^T = 0$}
+
+\begin{align}
+G_6: \quad (I - K_{n,n}) \text{vec}(\Lambda_P) = 0 \label{eq:G6_final}
+\end{align}
+
+\subsection{$G_7$: 対称性条件 $X L - (X L)^T = 0$}
+
+\begin{align}
+G_7: \quad \frac{\partial}{\partial D} (X L - (X L)^T) = \frac{\partial (X L)}{\partial D} - K_{n,n} \frac{\partial (X L)^T}{\partial D} = 0 \label{eq:G7_final}
+\end{align}
+
+\section{Implicit Differentiation}
+
+データ $D = [Z^T, X^T, U^T]^T \in \mathbb{R}^{(2n+m) \times T}$ に関する勾配を計算するため、KKT条件を $D$ で微分する。$D$をベクトル化して $\text{vec}(D) \in \mathbb{R}^{T(2n+m)}$ とすると：
+
+\begin{align}
+\frac{\partial G_i}{\partial \bm{x}} \frac{d\bm{x}}{d\text{vec}(D)} + \frac{\partial G_i}{\partial \text{vec}(D)} = 0, \quad i = 1, \ldots, 7 \label{eq:implicit_diff}
+\end{align}
+
+ここで、$\bm{x} = [\delta, \text{vec}(L), \text{vec}(\Lambda_1), \text{vec}(\Lambda_2), \text{vec}(\Lambda_P)]^T$ である。
+
+これを線形システムとして整理すると：
+
+\begin{align}
+H \frac{d\bm{x}}{d\text{vec}(D)} = -B \label{eq:linear_system_reg}
+\end{align}
+
+ここで、$H \in \mathbb{R}^{r \times c}$ は係数行列（$r$は制約の総行数、$c$は$\bm{x}$の次元）、$B \in \mathbb{R}^{r \times T(2n+m)}$ は右辺行列である。$\frac{d\bm{x}}{d\text{vec}(D)} \in \mathbb{R}^{c \times T(2n+m)}$ は勾配行列である。
+
+特に、$\delta$に関する勾配は：
+
+\begin{align}
+\frac{d\delta}{d\text{vec}(D)} = \left(H^{-1} (-B)\right)_{1,:} \label{eq:dDelta_dD}
+\end{align}
+
+ここで、$(\cdot)_{1,:}$は最初の行を表す。
+
+\section{実装上の注意点}
+
+\subsection{行列のサイズ}
+
+\begin{itemize}
+\item $F_1$: $(2n+2m) \times (2n+2m)$
+\item $\Lambda_1$: $(2n+2m) \times (2n+2m)$
+\item $L$: $T \times n$
+\item $\Lambda_2$: $n \times n$
+\item $\Lambda_P$: $n \times n$
+\item $\Pi$: $T \times T$
+\item $\Gamma$: $(m+n) \times T$
+\end{itemize}
+
+\subsection{正則化パラメータ$\gamma$}
+
+正則化パラメータ$\gamma$は、目的関数における$\| \Pi L \|_F^2$項の重みを制御する。大きな$\gamma$は、データ空間に射影されない成分を強く抑制する。
+
+\subsection{数値的安定性}
+
+\begin{itemize}
+\item $\epsilon > 0$は数値的安定性のための小さな正定数（通常$10^{-8}$程度）
+\item 対称性条件は数値誤差を考慮して実装される
+\item 行列のランクを確認し、解の一意性を検証する
+\end{itemize}
+
+\section{従来手法との比較}
+
+従来のデータ駆動型制御（Theorem 3に基づく手法）との主な違い：
+
+\begin{enumerate}
+\item \textbf{決定変数}: 従来手法は$Y, L, \alpha, \beta, \delta$を使用するが、正則化版は$L, \delta$のみを使用
+\item \textbf{制約条件}: 正則化版はより単純なLMI制約を使用
+\item \textbf{目的関数}: 正則化版は$\| \Pi L \|_F^2$項を追加することで、データ空間への射影を促進
+\item \textbf{計算コスト}: 正則化版は変数が少ないため、計算が高速
+\end{enumerate}
+
+\section{まとめ}
+
+本ドキュメントでは、正則化付き量子化制御器設計問題におけるImplicit Differentiationによる勾配計算の理論をまとめた。正則化項を導入することで、データ空間に射影されない成分を抑制し、より安定した制御器設計が可能となる。KKT条件を用いた勾配計算により、データ注入攻撃などの最適化問題において効率的に勾配を計算できる。
+
+\end{document}
+
