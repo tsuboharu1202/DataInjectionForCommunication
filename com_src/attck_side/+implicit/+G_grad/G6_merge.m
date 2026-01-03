@@ -18,7 +18,7 @@ sol.dY = sub_matrix*implicit.helper.dF1_dY(n,m);
 % d/dalpha [vec((F1-alpha*F2)*Lambda1')] = (Lambda1 ⊗ I) d/dalpha [vec(F1-alpha*F2)]
 % d/dalpha [F1-alpha*F2] = -F2
 % したがって、d/dalpha [vec((F1-alpha*F2)*Lambda1')] = -(Lambda1 ⊗ I) vec(F2) = -vec(Lambda1*F2)
-Lambda1F2 = Lambda1*F2;
+Lambda1F2 = F2*Lambda1';
 sol.dAlpha = -Lambda1F2(:);
 
 E11 = [speye(n);
@@ -27,7 +27,7 @@ M11 = E11*E11';
 % d/dbeta [vec((F1-alpha*F2)*Lambda1')] = (Lambda1 ⊗ I) d/dbeta [vec(F1)]
 % dF1/dbeta = -M11
 % したがって、d/dbeta [vec((F1-alpha*F2)*Lambda1')] = -vec(Lambda1*M11)
-Lambda1M11 = Lambda1*M11;
+Lambda1M11 = M11*Lambda1';
 sol.dBeta = -Lambda1M11(:);
 
 E11_withB = [B;
@@ -36,7 +36,7 @@ M11_withB = E11_withB*E11_withB';
 % d/dtDelta [vec((F1-alpha*F2)*Lambda1')] = (Lambda1 ⊗ I) d/dtDelta [vec(F1)]
 % dF1/dtDelta = -M11_withB
 % したがって、d/dtDelta [vec((F1-alpha*F2)*Lambda1')] = -vec(Lambda1*M11_withB)
-Lambda1M11_withB = Lambda1*M11_withB;
+Lambda1M11_withB = M11_withB*Lambda1';
 sol.dtDelta = -Lambda1M11_withB(:);
 
 % d/dLambda1 [vec((F1-alpha*F2)*Lambda1')]

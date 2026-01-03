@@ -43,7 +43,7 @@ if diagnostics.problem ~= 0
 end
 
 fprintf('  SDP解決完了: rho=%e\n', sol.rho);
-fprintf('  alpha=%e, beta=%e, tDelta=%e\n', sol.alpha, sol.beta, sol.tDelta);
+fprintf('  alpha=%e, beta=%e, tDelta=%e\n', sol.alpha, sol.beta, sol.delta);
 
 % ============================================
 % 2. SDPの解から必要な値を取得
@@ -55,7 +55,7 @@ Y_val = sol.Y;
 L_val = sol.L;
 alpha_val = sol.alpha;
 beta_val = sol.beta;
-tDelta_val = sol.tDelta;
+tDelta_val = sol.delta;
 
 % G, Phiを構築（solve_sdpと同じ方法）
 G = [eye(n), Z - B*U;
