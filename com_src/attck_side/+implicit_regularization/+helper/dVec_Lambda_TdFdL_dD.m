@@ -1,11 +1,11 @@
-function dVec_Lambda_TdFdL_dD = dVec_Lambda_TdFdL_dD(n,m,T,Lambda)
+function dVec_Lambda_TdFdL_dD = dVec_Lambda_TdFdL_dD(n,m,T,Lambda_ori)
 
-
+Lambda_sym = 0.5*(Lambda_ori + Lambda_ori');
 n1 = 2*n+m;
-Lambda11 = Lambda(1:n,1:n);
-Lambda21 = Lambda(n+1:n+n,1:n);
-Lambda22 = Lambda(n+1:n+n,n+1:n+n);
-Lambda41 = Lambda(2*n+m+1:2*n+2*m,1:n);
+Lambda11 = Lambda_sym(1:n,1:n);
+Lambda21 = Lambda_sym(n+1:n+n,1:n);
+Lambda22 = Lambda_sym(n+1:n+n,n+1:n+n);
+Lambda41 = Lambda_sym(2*n+m+1:2*n+2*m,1:n);
 
 
 Ez = [speye(n,n),sparse(n,n+m)];

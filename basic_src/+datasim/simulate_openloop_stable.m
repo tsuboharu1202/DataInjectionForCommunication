@@ -7,6 +7,7 @@ function [X,Z,U] = simulate_openloop_stable(A,B,V,x0)
 %
 % 注意: MATLABの dlqr は u = -Kx を返す（標準）ので、その約束に合わせる。
 
+if nargin < 5 || isempty(w_max), w_max = 1e-2; end
 [n, T] = deal(size(A,1), size(V,2));
 m = size(B,2);
 
@@ -32,7 +33,7 @@ X = zeros(n,T); Z = zeros(n,T);
 x = x0;
 for t = 1:T
     X(:,t) = x;
-    x = Ac*x + B*V(:,t) + 0.0001*randn(n,1);
+    x = Ac*x + B*V(:,t) + w_max*randn(n,1);
     % x = Ac*x + B*V(:,t);
     Z(:,t) = x;
 end

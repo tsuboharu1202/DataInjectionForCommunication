@@ -15,10 +15,18 @@ fprintf('=== Delta勾配方向への攻撃テスト ===\n\n');
 fprintf('1. モデル作成とSDPを解く...\n');
 
 % システムサイズ
-[n, m, T] = deal(4, 3, cfg.Const.SAMPLE_COUNT);
+[n, m, T] = deal(3, 1, cfg.Const.SAMPLE_COUNT);
 
 % システム生成
-[A, B] = datasim.make_lti(n, m);
+A = [-0.192, -0.936, -0.814;
+    -0.918,  0.729, -0.724;
+    -0.412,  0.735, -1.516];
+B = [-0.554;
+    0.735;
+    0.528];
+
+disp('eig A');
+disp(eig(A));
 
 % 入力とデータ取得
 V = make_inputU(m);
@@ -35,6 +43,7 @@ gamma = 1e3;
 [sol, ~, ~, ~, ~] = regularization_sdp.solve_sdp(data, gamma);
 
 delta_before = sol.delta;
+
 fprintf('  攻撃前: delta = %.6f\n', delta_before);
 
 % ============================================
@@ -46,11 +55,13 @@ L_val = sol.L;
 Lambda1 = sol.Lambda1;
 Lambda2 = sol.Lambda2;
 F1 = sol.F1;
+Lambda3 = sol.Lambda3;
+
 
 Gamma = [U; X];
 Pi = eye(T) - pinv(Gamma)*Gamma;
 
-dtDelta_dD = implicit_regularization.dtDelta_dD(n,m,T,B,X,Z,U,Pi,gamma,Gamma,L_val,Lambda1,Lambda2,F1);
+dtDelta_dD = implicit_regularization.dtDelta_dD(n,m,T,B,X,Z,U,Pi,gamma,Gamma,L_val,Lambda1,Lambda2,F1,Lambda3);
 
 fprintf('  勾配計算完了\n');
 
@@ -60,10 +71,10 @@ fprintf('  勾配計算完了\n');
 fprintf('\n3. Deltaの勾配方向に攻撃を加える...\n');
 
 % 攻撃の強度
-attack_strength = 0.001;
+attack_strength = 1e-2;
 
 % 攻撃方向：勾配の符号を取る（deltaを小さくする方向 = 負の勾配方向）
-attack_direction = +sign(dtDelta_dD);
+attack_direction = -sign(dtDelta_dD);
 
 % ノイズ生成
 noise_Z = attack_strength * attack_direction(1:n, :);

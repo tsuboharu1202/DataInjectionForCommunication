@@ -11,5 +11,8 @@ sol.dLambda = -dF_dDelta(:)';
 sol.dtDelta = 0;
 sol.dLambda_P = sparse(1,n*n);
 sol.Data = sparse(1,(2*n+m)*T);
-sol.G1_row_without_Data = [sol.dtDelta, sol.dL, sol.dLambda,sol.dLambda_P];
+sol.dLambda3 = sparse(1, n*n);
+sol.G1_row_without_Data = [sol.dtDelta, sol.dL, sol.dLambda, sol.dLambda_P, sol.dLambda3];
+% sol.Data はそのまま
+
 end

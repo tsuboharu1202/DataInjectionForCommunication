@@ -36,15 +36,17 @@ const_mat = [Xm_L_Sym, (Z*L)', zeros(n,m),(Um*L)';
     zeros(m,n), delta*B', eye(m), zeros(m,m);
     Um*L, zeros(m,n), zeros(m,m), eye(m)];
 
+
+
 % -------------------------
 % Constraints
 % -------------------------
 
-tolerance = 1e-8;
+tolerance = 1e-6;
 
 % 制約を個別に定義（dual取得のため）
-const_1 = [const_mat >= 0];
-const_2 = [Xm_L_Sym >= tolerance*eye(n)];
+const_1 = [const_mat >= tolerance*eye(2*n+2*m)];
+const_2 = [Xm_L_Sym >= (tolerance)*eye(n)];
 const_3 = [Xm*L == (Xm*L)'];
 
 constr  = [];
@@ -54,7 +56,7 @@ constr  = [constr, const_3];
 % constr  = [constr, delta >= tolerance];
 % Objective: maximize δ  <=>  minimize tDelta
 pi_matrix = eye(T) - pinv(Gamma_Matrix)*Gamma_Matrix;
-obj = -delta + gamma*norm(pi_matrix*L, 'fro');
+obj = -delta + gamma*norm(pi_matrix*L, 'fro')^2;
 
 params = sdpsettings('solver', opts.solver, 'verbose', opts.verbose);
 diagnostics = optimize(constr, obj, params);
@@ -85,6 +87,10 @@ sol.F1 = value(const_mat);
 
 K = Um*L_val*(Xm*L_val)^(-1);
 sol.K = K;
+
+
+
+
 % -------------------------
 % Dual values (Lagrange multipliers)
 % -------------------------
@@ -97,4 +103,20 @@ catch ME
     error('solve_sdp:DualFailed', ...
         'Dual変数の取得に失敗しました: %s', ME.message);
 end
+
+
+
+
+
+
+Xm_L_Sym = (Xm*L_val + (Xm*L_val)')/2;
+mineig_XL = min(eig((Xm_L_Sym+Xm_L_Sym')/2));
+norm_Lambda2 = norm(sol.Lambda2,'fro');
+
+F1 = sol.F1;  Lambda1 = sol.Lambda1;
+eF = eig((F1+F1')/2);
+eL = eig((Lambda1+Lambda1')/2);
+
+
+
 end

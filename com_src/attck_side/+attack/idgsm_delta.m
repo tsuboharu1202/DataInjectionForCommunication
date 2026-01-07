@@ -27,7 +27,9 @@ if nargin < 3 || isempty(alpha)
     alpha = cfg.Const.IDGSM_ALPHA;
 end
 if nargin < 4 || isempty(escape_local_min)
-    escape_local_min = cfg.Const.IDGSM_ESCAPE_LOCAL_MIN;
+    % 以前は局所最適解回避のためのランダムノイズ付加に使用していたが、
+    % 現在はランダムノイズを加えない方針のため、フラグは保持のみで未使用。
+    escape_local_min = false;
 end
 if nargin < 5 || isempty(epsilon)
     epsilon = cfg.Const.ATTACKER_UPPERLIMIT;
@@ -64,9 +66,6 @@ else
     history = [];
 end
 
-% 局所最適解回避用の変数
-delta_history = [];  % deltaの履歴を保持
-
 while is_continue
     fprintf('iter: %d\n', iter);
     
@@ -78,6 +77,23 @@ while is_continue
         dir_mult = 1;  % deltaを大きくする方向
     else
         dir_mult = -1;  % deltaを小さくする方向
+    end
+    
+    % X_grad, Z_grad, U_gradの正規化（要素単位の最大値で正規化）
+    % これにより、各勾配の最大要素が1になり、alphaの効果が明確になる
+    % また、projectorの要素単位制約（L∞ノルム）と整合性がある
+    max_X = max(abs(X_grad(:)));
+    max_Z = max(abs(Z_grad(:)));
+    max_U = max(abs(U_grad(:)));
+    
+    if max_X > eps
+        X_grad = X_grad / max_X;
+    end
+    if max_Z > eps
+        Z_grad = Z_grad / max_Z;
+    end
+    if max_U > eps
+        U_grad = U_grad / max_U;
     end
     
     % ノイズを累積
@@ -110,38 +126,6 @@ while is_continue
     delta_temp = sol_temp.delta;
     fprintf('delta_temp: %.6e\n', delta_temp);
     
-    % 局所最適解回避: i回目とi+IDGSM_STAGNATION_STEPS回目を比較
-    if escape_local_min && iter >= cfg.Const.IDGSM_STAGNATION_STEPS
-        % IDGSM_STAGNATION_STEPSステップ前のdeltaと比較
-        prev_delta_idx = iter - cfg.Const.IDGSM_STAGNATION_STEPS + 1;  % +1は0-indexedから1-indexedへの変換
-        if prev_delta_idx > 0 && prev_delta_idx <= length(delta_history)
-            prev_delta = delta_history(prev_delta_idx);
-            delta_change = abs(delta_temp - prev_delta);
-            if delta_change <= cfg.Const.IDGSM_RHO_CHANGE_THRESHOLD
-                % ランダムノイズを加える
-                noise_scale = cfg.Const.IDGSM_RANDOM_NOISE_SCALE * epsilon;
-                dX = dX + noise_scale * randn(size(dX));
-                dZ = dZ + noise_scale * randn(size(dZ));
-                dU = dU + noise_scale * randn(size(dU));
-                fprintf('局所最適解回避: ランダムノイズを追加 (iter=%d, prev_iter=%d, delta_change=%.2e)\n', iter, prev_delta_idx-1, delta_change);
-                % ノイズを加えたので、再度projectorを通す
-                [dX, dZ, dU, checkX, checkZ, checkU] = attack.projector(dX, dZ, dU, checkX, checkZ, checkU, epsilon);
-                % 更新されたノイズで再度deltaを計算
-                X_adv = ori_sd.X + dX;
-                Z_adv = ori_sd.Z + dZ;
-                U_adv = ori_sd.U + dU;
-                current_sd = datasim.SystemData(ori_sd.A, ori_sd.B, X_adv, Z_adv, U_adv, ...
-                    ori_sd.Phi11, ori_sd.Phi12, ori_sd.Phi22);
-                gamma = 1e3;
-                if isfield(opts, 'gamma')
-                    gamma = opts.gamma;
-                end
-                [sol_temp, ~, ~, ~, ~] = regularization_sdp.solve_sdp(current_sd, gamma);
-                delta_temp = sol_temp.delta;
-            end
-        end
-    end
-    
     % Save history if requested
     if save_history
         history.dX_history{end+1} = dX;
@@ -149,9 +133,6 @@ while is_continue
         history.dU_history{end+1} = dU;
         history.delta_history(end+1) = delta_temp;
     end
-    
-    % deltaの履歴を記録（局所最適解回避用）
-    delta_history(end+1) = delta_temp;
     
     % 終了条件: すべての要素が処理済み または 最大反復回数に達した または deltaが目標範囲外
     is_continue = ~allDone && (iter < cfg.Const.MAX_ITERATION);

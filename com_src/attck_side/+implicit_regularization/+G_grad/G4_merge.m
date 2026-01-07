@@ -8,7 +8,8 @@ sol.dLambda = speye(n1_2) - implicit.helper.commutation(n1,n1);
 sol.dtDelta = sparse(n1_2,1);
 sol.dLambda_P = sparse(n1_2,n*n);
 sol.Data = sparse(n1_2,T*(2*n+m));
+sol.dLambda3 = sparse(n1*n1, n*n);
+sol.G4_row_without_Data = [sol.dtDelta, sol.dL, sol.dLambda, sol.dLambda_P, sol.dLambda3];
 
-sol.G4_row_without_Data = [sol.dtDelta, sol.dL, sol.dLambda,sol.dLambda_P];
 
 end

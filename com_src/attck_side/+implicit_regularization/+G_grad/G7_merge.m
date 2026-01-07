@@ -9,5 +9,6 @@ sol.dLambda_P = sparse(n*n,n*n);
 C2nmT = implicit.helper.commutation(2*n+m,T);
 Ex = [sparse(n,n), speye(n),sparse(n,m)];
 sol.Data = kron(L',Ex)- kron(Ex,L')*C2nmT;
-sol.G7_row_without_Data = [sol.dtDelta, sol.dL, sol.dLambda,sol.dLambda_P];
+sol.dLambda3 = sparse(n*n, n*n);
+sol.G7_row_without_Data = [sol.dtDelta, sol.dL, sol.dLambda,sol.dLambda_P, sol.dLambda3];
 end

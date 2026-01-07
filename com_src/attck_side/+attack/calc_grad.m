@@ -25,7 +25,7 @@ Gamma = [sd.U; sd.X];
 Pi = eye(T) - pinv(Gamma)*Gamma;
 
 dtDelta_dD = implicit_regularization.dtDelta_dD(n, m, T, B, sd.X, sd.Z, sd.U, ...
-    Pi, gamma, Gamma, sol.L, sol.Lambda1, sol.Lambda2, sol.F1);
+    Pi, gamma, Gamma, sol.L, sol.Lambda1, sol.Lambda2, sol.F1,sol.Lambda3);
 
 % dtDelta_dDの形状: (2*n+m) × T
 % D = [Z', X', U']' なので、dtDelta_dD = [d(delta)/dZ; d(delta)/dX; d(delta)/dU]

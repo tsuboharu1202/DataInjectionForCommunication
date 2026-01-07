@@ -3,8 +3,9 @@ function [A,B] = make_lti(n,m)
 % ランダム生成 + 安定化
 
 % ランダムなシステムを生成
-A = randn(n,n);
-B = randn(n,m);
+% 不安定なシステムを作る
+A = (rand(n,n)-0.5*ones(n,n))*2 + eye(n);
+B = (rand(n,m)-0.5*ones(n,m))*2;
 
 % システムを安定化（すべての固有値の実部を負にする）
 % A_eig = eig(A);

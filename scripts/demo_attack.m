@@ -1,106 +1,140 @@
-% U生成→データ生成→SDP→表示の最小デモ
+% demo_attack.m
+% Regularization版のDGSMとIDGSMの比較
+%
+% 目的：
+% 1. Regularization版のSDPを解く
+% 2. DGSM（Direct）とIDGSM（Iterative）の攻撃を実行
+% 3. negative/positive両方向でdeltaの変化を比較
+
 clear; clc; close all;
 
-% 1) 連続の種 or 再現性
-% rng(1);
+fprintf('=== DGSM vs IDGSM 比較テスト (Regularization版) ===\n\n');
 
-[n,m,T] = deal(5,3,cfg.Const.SAMPLE_COUNT);
-[A,B] = datasim.make_lti(n,m);
+% ============================================
+% 1. モデル作成とSDPを解く
+% ============================================
+fprintf('1. モデル作成とSDPを解く...\n');
 
-disp('A');disp(A);
-disp('B');disp(B);
+% システムサイズ
+[n, m, T] = deal(3, 1, cfg.Const.SAMPLE_COUNT);
 
-% 3) 入力とデータ取得
+% システム定義（demo_implicit_regularization.mと同じ）
+A = [-0.192, -0.936, -0.814;
+    -0.918,  0.729, -0.724;
+    -0.412,  0.735, -0.516];
+B = [-0.554;
+    0.735;
+    0.528];
+
+fprintf('  システムサイズ: n=%d, m=%d, T=%d\n', n, m, T);
+
+% 入力とデータ取得（stable版）
 V = make_inputU(m);
-[X,Z,U] = datasim.simulate_openloop_stable(A,B,V);
+[X, Z, U] = datasim.simulate_openloop_stable(A, B, V);
+fprintf('  データ生成完了（stable版）\n');
 
-
-W = Z - A*X - B*U;   % n×T
-
-Phi11 = 1e-7*eye(n);     % 5%マージン
-% Phi11 = cfg.Const.SAMPLE_COUNT * eye(n);
-Phi12 = zeros(n,T);
+% Phi設定
+Phi11 = 1e-1 * eye(n);
+Phi12 = zeros(n, T);
 Phi22 = -eye(T);
 
-
-% 4) SDP (regularization版)
-data = datasim.SystemData(A,B,X,Z,U,Phi11,Phi12,Phi22);
+% 正則化付きSDPを解く
+data = datasim.SystemData(A, B, X, Z, U, Phi11, Phi12, Phi22);
 gamma = 1e3;
-[sol, K, ~, ~, ~] = regularization_sdp.solve_sdp(data, gamma);
-K_ori = K;
-% Use full eig for robustness (small n), and compute spectral radius.
-ev_ori = eig(A + B*K_ori);
-rho_ori = max(abs(ev_ori));
-delta_ori = sol.delta;
-fprintf('元のrho: %e, delta: %e\n', rho_ori, delta_ori);
+[sol_init, ~, ~, ~, ~] = regularization_sdp.solve_sdp(data, gamma);
 
+delta_init = sol_init.delta;
+fprintf('  初期delta = %.6f\n', delta_init);
 
 % ============================================
-% 攻撃の実行
+% 2. 攻撃パラメータ設定
 % ============================================
-fprintf('\n=== 攻撃の実行 ===\n');
+fprintf('\n2. 攻撃パラメータ設定...\n');
 
-% 1. DIRECT_DGSM_DELTA (deltaを小さくする方向)
-fprintf('\n1. DIRECT_DGSM_DELTA 攻撃（deltaを小さくする方向）...\n');
-[X_dgsm, Z_dgsm, U_dgsm] = attack.execute_attack(data, cfg.AttackType.DIRECT_DGSM_DELTA);
-sd_dgsm = datasim.SystemData(A,B,X_dgsm,Z_dgsm,U_dgsm,data.Phi11,data.Phi12,data.Phi22);
-gamma = 1e3;
-[sol_dgsm, ~, ~, ~, ~] = regularization_sdp.solve_sdp(sd_dgsm, gamma);
-delta_dgsm = sol_dgsm.delta;
-K_dgsm = sol_dgsm.K;
-rho_dgsm = max(abs(eig(A+B*K_dgsm)));
-fprintf('  delta_dgsm: %e (元: %e, 変化: %+.2e)\n', delta_dgsm, delta_ori, delta_dgsm - delta_ori);
-fprintf('  rho_dgsm: %e (元: %e, 変化: %+.2e)\n', rho_dgsm, rho_ori, rho_dgsm - rho_ori);
+eps_att = cfg.Const.ATTACKER_UPPERLIMIT;
+opts = struct('gamma', gamma);
 
-% 2. IMPLICIT_IDGSM_DELTA_POSITIVE (deltaを大きくする方向)
-fprintf('\n2. IMPLICIT_IDGSM_DELTA_POSITIVE 攻撃（deltaを大きくする方向）...\n');
-[X_large, Z_large, U_large, history_large] = attack.execute_attack(data, cfg.AttackType.IMPLICIT_IDGSM_DELTA_POSITIVE, [], [], true);
-sd_large = datasim.SystemData(A,B,X_large,Z_large,U_large,data.Phi11,data.Phi12,data.Phi22);
-[sol_large, ~, ~, ~, ~] = regularization_sdp.solve_sdp(sd_large, gamma);
-delta_large = sol_large.delta;
-K_large = sol_large.K;
-rho_large = max(abs(eig(A+B*K_large)));
-fprintf('  delta_large: %e (元: %e, 変化: %+.2e)\n', delta_large, delta_ori, delta_large - delta_ori);
-fprintf('  rho_large: %e (元: %e, 変化: %+.2e)\n', rho_large, rho_ori, rho_large - rho_ori);
-if ~isempty(history_large) && isfield(history_large, 'delta_history')
-    fprintf('  履歴: delta[0]=%e -> delta[%d]=%e (反復回数: %d)\n', ...
-        history_large.delta_history(1), length(history_large.delta_history)-1, ...
-        history_large.delta_history(end), history_large.iter_count);
-end
-
-% 3. IMPLICIT_IDGSM_DELTA_NEGATIVE (deltaを小さくする方向)
-fprintf('\n3. IMPLICIT_IDGSM_DELTA_NEGATIVE 攻撃（deltaを小さくする方向）...\n');
-[X_small, Z_small, U_small, history_small] = attack.execute_attack(data, cfg.AttackType.IMPLICIT_IDGSM_DELTA_NEGATIVE, [], [], true);
-sd_small = datasim.SystemData(A,B,X_small,Z_small,U_small,data.Phi11,data.Phi12,data.Phi22);
-[sol_small, ~, ~, ~, ~] = regularization_sdp.solve_sdp(sd_small, gamma);
-delta_small = sol_small.delta;
-K_small = sol_small.K;
-rho_small = max(abs(eig(A+B*K_small)));
-fprintf('  delta_small: %e (元: %e, 変化: %+.2e)\n', delta_small, delta_ori, delta_small - delta_ori);
-fprintf('  rho_small: %e (元: %e, 変化: %+.2e)\n', rho_small, rho_ori, rho_small - rho_ori);
-if ~isempty(history_small) && isfield(history_small, 'delta_history')
-    fprintf('  履歴: delta[0]=%e -> delta[%d]=%e (反復回数: %d)\n', ...
-        history_small.delta_history(1), length(history_small.delta_history)-1, ...
-        history_small.delta_history(end), history_small.iter_count);
-end
+fprintf('  攻撃強度: eps_att = %.2e\n', eps_att);
+fprintf('  gamma = %.2e\n', gamma);
 
 % ============================================
-% 結果の比較
+% 3. DGSM攻撃（negative方向）
 % ============================================
-fprintf('\n=== 結果の比較 ===\n');
-fprintf('元のdelta: %e, rho: %e\n', delta_ori, rho_ori);
-fprintf('\n--- Deltaの変化 ---\n');
-fprintf('DIRECT_DGSM_DELTA:        delta=%e (変化: %+.2e)\n', delta_dgsm, delta_dgsm - delta_ori);
-fprintf('IMPLICIT_IDGSM_DELTA_POSITIVE:  delta=%e (変化: %+.2e)\n', delta_large, delta_large - delta_ori);
-fprintf('IMPLICIT_IDGSM_DELTA_NEGATIVE:  delta=%e (変化: %+.2e)\n', delta_small, delta_small - delta_ori);
-fprintf('\n--- Rhoの変化 ---\n');
-fprintf('DIRECT_DGSM_DELTA:        rho=%e (変化: %+.2e)\n', rho_dgsm, rho_dgsm - rho_ori);
-fprintf('IMPLICIT_IDGSM_DELTA_POSITIVE:  rho=%e (変化: %+.2e)\n', rho_large, rho_large - rho_ori);
-fprintf('IMPLICIT_IDGSM_DELTA_NEGATIVE:  rho=%e (変化: %+.2e)\n', rho_small, rho_small - rho_ori);
+fprintf('\n3. DGSM攻撃（negative方向）...\n');
+
+[X_dgsm_neg, Z_dgsm_neg, U_dgsm_neg] = attack.dgsm_delta(data, eps_att, 'negative', opts);
+data_dgsm_neg = datasim.SystemData(A, B, X_dgsm_neg, Z_dgsm_neg, U_dgsm_neg, Phi11, Phi12, Phi22);
+[sol_dgsm_neg, ~, ~, ~, ~] = regularization_sdp.solve_sdp(data_dgsm_neg, gamma);
+delta_dgsm_neg = sol_dgsm_neg.delta;
+
+fprintf('  DGSM (negative): delta = %.6f (変化: %.6e, %.2f%%)\n', ...
+    delta_dgsm_neg, delta_dgsm_neg - delta_init, ...
+    100 * (delta_dgsm_neg - delta_init) / delta_init);
 
 % ============================================
-% 可視化
+% 4. DGSM攻撃（positive方向）
 % ============================================
-fprintf('\n=== 可視化 ===\n');
-fprintf('DIRECT_DGSM_DELTAの結果を表示します...\n');
-visualize.plot_data(X, X_dgsm);
+fprintf('\n4. DGSM攻撃（positive方向）...\n');
+
+[X_dgsm_pos, Z_dgsm_pos, U_dgsm_pos] = attack.dgsm_delta(data, eps_att, 'positive', opts);
+data_dgsm_pos = datasim.SystemData(A, B, X_dgsm_pos, Z_dgsm_pos, U_dgsm_pos, Phi11, Phi12, Phi22);
+[sol_dgsm_pos, ~, ~, ~, ~] = regularization_sdp.solve_sdp(data_dgsm_pos, gamma);
+delta_dgsm_pos = sol_dgsm_pos.delta;
+
+fprintf('  DGSM (positive): delta = %.6f (変化: %.6e, %.2f%%)\n', ...
+    delta_dgsm_pos, delta_dgsm_pos - delta_init, ...
+    100 * (delta_dgsm_pos - delta_init) / delta_init);
+
+% ============================================
+% 5. IDGSM攻撃（negative方向）
+% ============================================
+fprintf('\n5. IDGSM攻撃（negative方向）...\n');
+
+[X_idgsm_neg, Z_idgsm_neg, U_idgsm_neg] = attack.idgsm_delta(data, false, [], [], eps_att, 'negative', opts);
+data_idgsm_neg = datasim.SystemData(A, B, X_idgsm_neg, Z_idgsm_neg, U_idgsm_neg, Phi11, Phi12, Phi22);
+[sol_idgsm_neg, ~, ~, ~, ~] = regularization_sdp.solve_sdp(data_idgsm_neg, gamma);
+delta_idgsm_neg = sol_idgsm_neg.delta;
+
+fprintf('  IDGSM (negative): delta = %.6f (変化: %.6e, %.2f%%)\n', ...
+    delta_idgsm_neg, delta_idgsm_neg - delta_init, ...
+    100 * (delta_idgsm_neg - delta_init) / delta_init);
+
+% ============================================
+% 6. IDGSM攻撃（positive方向）
+% ============================================
+fprintf('\n6. IDGSM攻撃（positive方向）...\n');
+
+[X_idgsm_pos, Z_idgsm_pos, U_idgsm_pos] = attack.idgsm_delta(data, false, [], [], eps_att, 'positive', opts);
+data_idgsm_pos = datasim.SystemData(A, B, X_idgsm_pos, Z_idgsm_pos, U_idgsm_pos, Phi11, Phi12, Phi22);
+[sol_idgsm_pos, ~, ~, ~, ~] = regularization_sdp.solve_sdp(data_idgsm_pos, gamma);
+delta_idgsm_pos = sol_idgsm_pos.delta;
+
+fprintf('  IDGSM (positive): delta = %.6f (変化: %.6e, %.2f%%)\n', ...
+    delta_idgsm_pos, delta_idgsm_pos - delta_init, ...
+    100 * (delta_idgsm_pos - delta_init) / delta_init);
+
+% ============================================
+% 7. 結果比較
+% ============================================
+fprintf('\n=== 結果比較 ===\n');
+fprintf('初期delta: %.6f\n\n', delta_init);
+
+fprintf('【Negative方向（deltaを小さくする）】\n');
+fprintf('  DGSM:  delta = %.6f, 変化量 = %.6e (%.2f%%)\n', ...
+    delta_dgsm_neg, delta_dgsm_neg - delta_init, ...
+    100 * (delta_dgsm_neg - delta_init) / delta_init);
+fprintf('  IDGSM: delta = %.6f, 変化量 = %.6e (%.2f%%)\n', ...
+    delta_idgsm_neg, delta_idgsm_neg - delta_init, ...
+    100 * (delta_idgsm_neg - delta_init) / delta_init);
+fprintf('  差異: IDGSM - DGSM = %.6e\n\n', delta_idgsm_neg - delta_dgsm_neg);
+
+fprintf('【Positive方向（deltaを大きくする）】\n');
+fprintf('  DGSM:  delta = %.6f, 変化量 = %.6e (%.2f%%)\n', ...
+    delta_dgsm_pos, delta_dgsm_pos - delta_init, ...
+    100 * (delta_dgsm_pos - delta_init) / delta_init);
+fprintf('  IDGSM: delta = %.6f, 変化量 = %.6e (%.2f%%)\n', ...
+    delta_idgsm_pos, delta_idgsm_pos - delta_init, ...
+    100 * (delta_idgsm_pos - delta_init) / delta_init);
+fprintf('  差異: IDGSM - DGSM = %.6e\n\n', delta_idgsm_pos - delta_dgsm_pos);
+
+fprintf('=== テスト完了 ===\n');

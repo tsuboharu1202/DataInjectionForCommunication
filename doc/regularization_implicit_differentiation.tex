@@ -334,6 +334,71 @@ $G_3$を$\delta$で微分する際、$\frac{\partial F_1}{\partial \delta}$の�
 \item 行列のランクを確認し、解の一意性を検証する
 \end{itemize}
 
+\subsection{データ注入攻撃手法}
+
+計算された勾配$\frac{d\delta}{dD}$を用いて、データ注入攻撃を実行する。実装では以下の2つの手法を提供している：
+
+\subsubsection{DGSM (Direct Gradient Sign Method)}
+
+DGSMは1ステップの攻撃手法であり、勾配の符号方向に一定の強度$\varepsilon$でノイズを加える：
+
+\begin{align}
+D_{\text{adv}} = D + \varepsilon \cdot \text{sign}\left(\frac{d\delta}{dD}\right) \cdot \text{dir} \label{eq:dgsm}
+\end{align}
+
+ここで、$\text{dir} \in \{+1, -1\}$は攻撃方向を表す：
+\begin{itemize}
+\item $\text{dir} = +1$: $\delta$を大きくする方向（positive方向）
+\item $\text{dir} = -1$: $\delta$を小さくする方向（negative方向、デフォルト）
+\end{itemize}
+
+\subsubsection{IDGSM (Iterative Direct Gradient Sign Method)}
+
+IDGSMは反復的な攻撃手法であり、各反復で勾配を計算し、ノイズを累積する：
+
+\begin{align}
+d^{(k+1)} &= d^{(k)} + \alpha \cdot \tilde{g}^{(k)} \cdot \text{dir} \label{eq:idgsm_update} \\
+D_{\text{adv}}^{(k+1)} &= D + \text{Proj}_{\varepsilon}(d^{(k+1)}) \label{eq:idgsm_proj}
+\end{align}
+
+ここで：
+\begin{itemize}
+\item $d^{(k)}$: $k$回目の反復での累積ノイズ
+\item $\tilde{g}^{(k)}$: 正規化された勾配（後述）
+\item $\alpha > 0$: ステップサイズ（通常$5 \times 10^{-3}$程度）
+\item $\text{Proj}_{\varepsilon}(\cdot)$: 要素単位のL∞ノルム制約を満たす投影演算子
+\end{itemize}
+
+\subsubsection{勾配の正規化}
+
+IDGSMでは、各勾配$g^{(k)} = [g_X^{(k)}, g_Z^{(k)}, g_U^{(k)}]$を要素単位の最大値で正規化する：
+
+\begin{align}
+\tilde{g}_X^{(k)} &= \frac{g_X^{(k)}}{\max_{i,j} |g_X^{(k)}(i,j)|} \label{eq:norm_X} \\
+\tilde{g}_Z^{(k)} &= \frac{g_Z^{(k)}}{\max_{i,j} |g_Z^{(k)}(i,j)|} \label{eq:norm_Z} \\
+\tilde{g}_U^{(k)} &= \frac{g_U^{(k)}}{\max_{i,j} |g_U^{(k)}(i,j)|} \label{eq:norm_U}
+\end{align}
+
+この正規化により：
+\begin{itemize}
+\item 各勾配の最大要素が1になり、ステップサイズ$\alpha$の効果が明確になる
+\item 投影演算子$\text{Proj}_{\varepsilon}$の要素単位制約（L∞ノルム）と整合性がある
+\item 勾配のスケールが小さい場合でも、$\alpha$の効果が適切に反映される
+\end{itemize}
+
+\subsubsection{投影演算子}
+
+投影演算子$\text{Proj}_{\varepsilon}$は、要素単位でL∞ノルム制約を適用する：
+
+\begin{align}
+\text{Proj}_{\varepsilon}(d)(i,j) = \begin{cases}
+\varepsilon \cdot \text{sign}(d(i,j)) & \text{if } |d(i,j)| > \varepsilon \\
+d(i,j) & \text{otherwise}
+\end{cases} \label{eq:projector}
+\end{align}
+
+この投影により、各要素が$[-\varepsilon, \varepsilon]$の範囲内に制限される。
+
 \section{従来手法との比較}
 
 従来のデータ駆動型制御（Theorem 3に基づく手法）との主な違い：
@@ -351,5 +416,7 @@ $G_3$を$\delta$で微分する際、$\frac{\partial F_1}{\partial \delta}$の�
 本ドキュメントでは、正則化付き量子化制御器設計問題におけるImplicit Differentiationによる勾配計算の理論をまとめた。正則化項を導入することで、データ空間に射影されない成分を抑制し、より安定した制御器設計が可能となる。KKT条件を用いた勾配計算により、データ注入攻撃などの最適化問題において効率的に勾配を計算できる。
 
 特に重要な点は、$G_3$における$\delta$の項を正しく扱うことで、システムのrankが満たされ、解の一意性が保証されることである。
+
+計算された勾配を用いて、DGSM（1ステップ攻撃）やIDGSM（反復攻撃）によりデータ注入攻撃を実行できる。IDGSMでは、要素単位の最大値による正規化により、勾配のスケールが小さい場合でも適切に動作し、投影演算子による要素単位のL∞ノルム制約と整合性が保たれる。
 
 \end{document}

@@ -49,7 +49,7 @@ Phi  = [Phi11 Phi12; Phi12' Phi22];
 % Constraints
 % -------------------------
 
-tolerance = 1e-8;
+tolerance = 1e-6;
 
 % 制約を個別に定義（dual取得のため）
 const_1 = [F1 - alpha*F2 >= 0];  % Lambda1に対応 (F2 = G*Phi*G'はalphaを含まない)
@@ -71,7 +71,8 @@ constr  = [constr, const_tDelta_upper];
 
 % Objective: maximize δ  <=>  minimize tDelta
 % pi_matrix = eye(T) - pinv(Gamma_Matrix)*Gamma_Matrix;
-obj = -tDelta + 1e-6*norm(Y, 'fro') + 1e-6*norm(L, 'fro');
+% obj = -tDelta + 1e-6*norm(Y, 'fro') + 1e-6*norm(L, 'fro');
+obj = -tDelta;
 
 params = sdpsettings('solver', opts.solver, 'verbose', opts.verbose);
 diagnostics = optimize(constr, obj, params);
