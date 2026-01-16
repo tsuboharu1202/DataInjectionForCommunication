@@ -33,8 +33,8 @@ X = zeros(n,T); Z = zeros(n,T);
 x = x0;
 for t = 1:T
     X(:,t) = x;
-    x = Ac*x + B*V(:,t) + w_max*randn(n,1);
-    % x = Ac*x + B*V(:,t);
+    x = Ac*x + B*V(:,t);  % ノイズなし
+    % x = Ac*x + B*V(:,t) + w_max*randn(n,1);  % ノイズあり（無効化）
     Z(:,t) = x;
 end
 

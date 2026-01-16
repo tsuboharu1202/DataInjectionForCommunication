@@ -37,26 +37,41 @@ switch method_str
         [X_adv, Z_adv, U_adv] = attack.dgsm_delta(system_data, eps_att, direction, opts);
         
     case {cfg.AttackType.IMPLICIT_IDGSM_DELTA, "IMPLICIT_IDGSM_DELTA"}
+        % save_grad_normsをoptsから取得（デフォルトはfalse）
+        save_grad_norms = false;
+        if isfield(opts, 'save_grad_norms')
+            save_grad_norms = opts.save_grad_norms;
+        end
         if save_history
-            [X_adv, Z_adv, U_adv, history] = attack.idgsm_delta(system_data, save_history, [], [], eps_att, direction, opts);
+            [X_adv, Z_adv, U_adv, history] = attack.idgsm_delta(system_data, save_history, [], [], eps_att, direction, save_grad_norms, opts);
         else
-            [X_adv, Z_adv, U_adv] = attack.idgsm_delta(system_data, false, [], [], eps_att, direction, opts);
+            [X_adv, Z_adv, U_adv] = attack.idgsm_delta(system_data, false, [], [], eps_att, direction, save_grad_norms, opts);
         end
         
     case {cfg.AttackType.IMPLICIT_IDGSM_DELTA_POSITIVE, "IMPLICIT_IDGSM_DELTA_POSITIVE"}
         % deltaを大きくする方向
+        % save_grad_normsをoptsから取得（デフォルトはfalse）
+        save_grad_norms = false;
+        if isfield(opts, 'save_grad_norms')
+            save_grad_norms = opts.save_grad_norms;
+        end
         if save_history
-            [X_adv, Z_adv, U_adv, history] = attack.idgsm_delta(system_data, save_history, [], [], eps_att, 'positive', opts);
+            [X_adv, Z_adv, U_adv, history] = attack.idgsm_delta(system_data, save_history, [], [], eps_att, 'positive', save_grad_norms, opts);
         else
-            [X_adv, Z_adv, U_adv] = attack.idgsm_delta(system_data, false, [], [], eps_att, 'positive', opts);
+            [X_adv, Z_adv, U_adv] = attack.idgsm_delta(system_data, false, [], [], eps_att, 'positive', save_grad_norms, opts);
         end
         
     case {cfg.AttackType.IMPLICIT_IDGSM_DELTA_NEGATIVE, "IMPLICIT_IDGSM_DELTA_NEGATIVE"}
         % deltaを小さくする方向
+        % save_grad_normsをoptsから取得（デフォルトはfalse）
+        save_grad_norms = false;
+        if isfield(opts, 'save_grad_norms')
+            save_grad_norms = opts.save_grad_norms;
+        end
         if save_history
-            [X_adv, Z_adv, U_adv, history] = attack.idgsm_delta(system_data, save_history, [], [], eps_att, 'negative', opts);
+            [X_adv, Z_adv, U_adv, history] = attack.idgsm_delta(system_data, save_history, [], [], eps_att, 'negative', save_grad_norms, opts);
         else
-            [X_adv, Z_adv, U_adv] = attack.idgsm_delta(system_data, false, [], [], eps_att, 'negative', opts);
+            [X_adv, Z_adv, U_adv] = attack.idgsm_delta(system_data, false, [], [], eps_att, 'negative', save_grad_norms, opts);
         end
         
     otherwise

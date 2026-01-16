@@ -16,6 +16,7 @@
 # MATLABプロジェクトファイル
 *.prj
 resources/
+Experiment/
 
 # 実験結果データ（CSV、MATファイル）
 Experiment/DataSet/*.csv
@@ -38,6 +39,9 @@ Thumbs.db
 # 一時ファイル
 *.bak
 *.cache
+
+
+
 
 
 

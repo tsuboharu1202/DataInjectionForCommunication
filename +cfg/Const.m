@@ -7,8 +7,7 @@ classdef Const
         FD_STEP = eps^(1/3)
         
         % 攻撃側制約
-        ATTACKER_UPPERLIMIT = 1e-2
-        
+        ATTACKER_UPPERLIMIT = 1e-3
         
         EPSILON = 1e-4
         
@@ -17,6 +16,6 @@ classdef Const
         
         % IDGSM関連の定数
         IDGSM_ALPHA = 1e-3  % ステップサイズ
-        MAX_ITERATION = 40  % 最大反復回数
+        MAX_ITERATION = 10  % 最大反復回数
     end
 end

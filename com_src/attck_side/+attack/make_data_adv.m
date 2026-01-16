@@ -25,7 +25,7 @@ end
 X_adv = d_adv_add(sd.X, X_grad, eps_att, direction_mult);
 Z_adv = d_adv_add(sd.Z, Z_grad, eps_att, direction_mult);
 U_adv = d_adv_add(sd.U, U_grad, eps_att, direction_mult);
-
+   
     function d_adv = d_adv_add(d_ori, d_grad, eps, dir_mult)
         % 要素単位で： d_adv = d_ori + ε * sign(d_grad) * dir_mult
         d_adv = d_ori + eps .* sign(d_grad) .* dir_mult;
