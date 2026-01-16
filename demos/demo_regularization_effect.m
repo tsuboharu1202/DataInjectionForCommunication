@@ -14,16 +14,18 @@ fprintf('=== 正則化の効果評価テスト ===\n\n');
 % パラメータ設定
 % ============================================
 n_systems = 10;  % システム数
-[n, m, T] = deal(3, 1, cfg.Const.SAMPLE_COUNT);
+[n, m] = cfg.System.getDimensions();
+T = cfg.System.getSampleCount();
 
 % 正則化パラメータ
-gamma_with_reg = 1e3;      % 正則化あり
-gamma_without_reg = 0;    % 正則化なし（または非常に小さい値）
+gamma_with_reg = 1e3;  % 正則化あり
+gamma_without_reg = 0;           % 正則化なし
 
-% Phi設定
-Phi11 = 1e-1 * eye(n);
-Phi12 = zeros(n, T);
-Phi22 = -eye(T);
+% Phi設定（cfg.Systemから取得）
+Phi = cfg.System.getDefaultPhi(n, T);
+Phi11 = Phi.Phi11;
+Phi12 = Phi.Phi12;
+Phi22 = Phi.Phi22;
 
 % 結果を保存する配列
 results = struct();
@@ -68,7 +70,7 @@ for sys_idx = 1:n_systems
     fprintf('  Aの固有値（実部最大）: %.4f (安定)\n', max_real);
     
     % データ生成
-    V = make_inputU(m);
+    V = make_inputU(m, T);
     [X, Z, U] = datasim.simulate_openloop_stable(A, B, V);
     
     data = datasim.SystemData(A, B, X, Z, U, Phi11, Phi12, Phi22);

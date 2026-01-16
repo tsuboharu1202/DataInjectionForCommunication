@@ -9,7 +9,7 @@ if ~exist(datasetDir, 'dir'); mkdir(datasetDir); end
 dateTag = datestr(now, 'yyyymmdd_HHMM');
 csvFile = fullfile(datasetDir, sprintf('attack_log_%s.csv', dateTag));
 run_id  = datestr(now,'yyyymmdd_HHMMSS_FFF');
-ULIM    = cfg.Const.ATTACKER_UPPERLIMIT;
+ULIM    = 1e-3;  % 攻撃強度上限
 
 % === ループ設定 ===
 Nlog         = 20;

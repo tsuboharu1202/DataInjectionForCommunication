@@ -15,18 +15,12 @@ fprintf('=== DGSM vs IDGSM 比較テスト (Regularization版) ===\n\n');
 % ============================================
 fprintf('1. モデル作成とSDPを解く...\n');
 
-% システムサイズ
-[n, m, T] = deal(3, 1, cfg.Const.SAMPLE_COUNT);
+% システム設定（cfg.Systemから取得）
+A = cfg.System.A;
+B = cfg.System.B;
+[n, m] = cfg.System.getDimensions();
+T = cfg.System.getSampleCount();
 
-% システム定義（demo_implicit_regularization.mと同じ）
-A = [-0.192, -0.936, -0.814;
-    -0.918,  0.729, -0.724;
-    -0.412,  0.735, -0.516];
-B = [-0.554;
-    0.735;
-    0.528];
-
-% [A,B] = datasim.make_lti(n,m);
 disp('A');disp(A);
 disp('B');disp(B);
 disp('eig(A)');disp(eig(A));
@@ -34,18 +28,19 @@ disp('eig(A)');disp(eig(A));
 fprintf('  システムサイズ: n=%d, m=%d, T=%d\n', n, m, T);
 
 % 入力とデータ取得（stable版）
-V = make_inputU(m);
+V = make_inputU(m, T);
 [X, Z, U] = datasim.simulate_openloop_stable(A, B, V);
 fprintf('  データ生成完了（stable版）\n');
 
-% Phi設定
-Phi11 = 1e-1 * eye(n);
-Phi12 = zeros(n, T);
-Phi22 = -eye(T);
+% Phi設定（cfg.Systemから取得）
+Phi = cfg.System.getDefaultPhi(n, T);
+Phi11 = Phi.Phi11;
+Phi12 = Phi.Phi12;
+Phi22 = Phi.Phi22;
 
 % 正則化付きSDPを解く
 data = datasim.SystemData(A, B, X, Z, U, Phi11, Phi12, Phi22);
-gamma = 1e3;
+gamma = 1e3;  % 正則化パラメータ
 [sol_init, ~, ~, ~, ~] = proposed.solve_sdp(data, gamma);
 
 delta_init = sol_init.delta;
@@ -56,8 +51,7 @@ fprintf('  初期delta = %.6f\n', delta_init);
 % ============================================
 fprintf('\n2. 攻撃パラメータ設定...\n');
 
-eps_att = cfg.Const.ATTACKER_UPPERLIMIT;
-opts = struct('gamma', gamma);
+eps_att = 1e-3;  % 攻撃強度
 
 fprintf('  攻撃強度: eps_att = %.2e\n', eps_att);
 fprintf('  gamma = %.2e\n', gamma);
@@ -67,7 +61,8 @@ fprintf('  gamma = %.2e\n', gamma);
 % ============================================
 fprintf('\n3. DGSM攻撃（negative方向）...\n');
 
-[X_dgsm_neg, Z_dgsm_neg, U_dgsm_neg] = algorithms.dgsm_delta(data, eps_att, 'negative', opts);
+opts_dgsm_neg = struct('gamma', gamma, 'epsilon', eps_att, 'direction', 'negative');
+[X_dgsm_neg, Z_dgsm_neg, U_dgsm_neg] = algorithms.dgsm_delta(data, opts_dgsm_neg);
 data_dgsm_neg = datasim.SystemData(A, B, X_dgsm_neg, Z_dgsm_neg, U_dgsm_neg, Phi11, Phi12, Phi22);
 [sol_dgsm_neg, ~, ~, ~, ~] = proposed.solve_sdp(data_dgsm_neg, gamma);
 delta_dgsm_neg = sol_dgsm_neg.delta;
@@ -81,7 +76,8 @@ fprintf('  DGSM (negative): delta = %.6f (変化: %.6e, %.2f%%)\n', ...
 % ============================================
 fprintf('\n4. DGSM攻撃（positive方向）...\n');
 
-[X_dgsm_pos, Z_dgsm_pos, U_dgsm_pos] = algorithms.dgsm_delta(data, eps_att, 'positive', opts);
+opts_dgsm_pos = struct('gamma', gamma, 'epsilon', eps_att, 'direction', 'positive');
+[X_dgsm_pos, Z_dgsm_pos, U_dgsm_pos] = algorithms.dgsm_delta(data, opts_dgsm_pos);
 data_dgsm_pos = datasim.SystemData(A, B, X_dgsm_pos, Z_dgsm_pos, U_dgsm_pos, Phi11, Phi12, Phi22);
 [sol_dgsm_pos, ~, ~, ~, ~] = proposed.solve_sdp(data_dgsm_pos, gamma);
 delta_dgsm_pos = sol_dgsm_pos.delta;
@@ -95,10 +91,15 @@ fprintf('  DGSM (positive): delta = %.6f (変化: %.6e, %.2f%%)\n', ...
 % ============================================
 fprintf('\n5. IDGSM攻撃（negative方向）- 正規化あり...\n');
 
-% 勾配ノルムを記録するためにsave_historyとsave_grad_normsを有効化
-opts_normalize = opts;
-opts_normalize.normalize_grad = true;
-[X_idgsm_neg, Z_idgsm_neg, U_idgsm_neg, history_idgsm_neg] = algorithms.idgsm_delta(data, true, [], [], eps_att, 'negative', true, opts_normalize);
+opts_idgsm_neg = struct();
+opts_idgsm_neg.gamma = gamma;
+opts_idgsm_neg.epsilon = eps_att;
+opts_idgsm_neg.direction = 'negative';
+opts_idgsm_neg.save_history = true;
+opts_idgsm_neg.save_grad_norms = true;
+opts_idgsm_neg.normalize_grad = true;
+
+[X_idgsm_neg, Z_idgsm_neg, U_idgsm_neg, history_idgsm_neg] = algorithms.idgsm_delta(data, opts_idgsm_neg);
 data_idgsm_neg = datasim.SystemData(A, B, X_idgsm_neg, Z_idgsm_neg, U_idgsm_neg, Phi11, Phi12, Phi22);
 [sol_idgsm_neg, ~, ~, ~, ~] = proposed.solve_sdp(data_idgsm_neg, gamma);
 delta_idgsm_neg = sol_idgsm_neg.delta;
@@ -113,9 +114,15 @@ fprintf('  反復回数: %d\n', history_idgsm_neg.iter_count);
 % ============================================
 fprintf('\n5b. IDGSM攻撃（negative方向）- 正規化なし...\n');
 
-opts_no_normalize = opts;
-opts_no_normalize.normalize_grad = false;
-[X_idgsm_neg_no_norm, Z_idgsm_neg_no_norm, U_idgsm_neg_no_norm, history_idgsm_neg_no_norm] = algorithms.idgsm_delta(data, true, [], [], eps_att, 'negative', true, opts_no_normalize);
+opts_idgsm_neg_no_norm = struct();
+opts_idgsm_neg_no_norm.gamma = gamma;
+opts_idgsm_neg_no_norm.epsilon = eps_att;
+opts_idgsm_neg_no_norm.direction = 'negative';
+opts_idgsm_neg_no_norm.save_history = true;
+opts_idgsm_neg_no_norm.save_grad_norms = true;
+opts_idgsm_neg_no_norm.normalize_grad = false;
+
+[X_idgsm_neg_no_norm, Z_idgsm_neg_no_norm, U_idgsm_neg_no_norm, history_idgsm_neg_no_norm] = algorithms.idgsm_delta(data, opts_idgsm_neg_no_norm);
 data_idgsm_neg_no_norm = datasim.SystemData(A, B, X_idgsm_neg_no_norm, Z_idgsm_neg_no_norm, U_idgsm_neg_no_norm, Phi11, Phi12, Phi22);
 [sol_idgsm_neg_no_norm, ~, ~, ~, ~] = proposed.solve_sdp(data_idgsm_neg_no_norm, gamma);
 delta_idgsm_neg_no_norm = sol_idgsm_neg_no_norm.delta;
@@ -130,8 +137,15 @@ fprintf('  反復回数: %d\n', history_idgsm_neg_no_norm.iter_count);
 % ============================================
 fprintf('\n6. IDGSM攻撃（positive方向）...\n');
 
-% 勾配ノルムを記録するためにsave_historyとsave_grad_normsを有効化
-[X_idgsm_pos, Z_idgsm_pos, U_idgsm_pos, history_idgsm_pos] = algorithms.idgsm_delta(data, true, [], [], eps_att, 'positive', true, opts);
+opts_idgsm_pos = struct();
+opts_idgsm_pos.gamma = gamma;
+opts_idgsm_pos.epsilon = eps_att;
+opts_idgsm_pos.direction = 'positive';
+opts_idgsm_pos.save_history = true;
+opts_idgsm_pos.save_grad_norms = true;
+opts_idgsm_pos.normalize_grad = true;
+
+[X_idgsm_pos, Z_idgsm_pos, U_idgsm_pos, history_idgsm_pos] = algorithms.idgsm_delta(data, opts_idgsm_pos);
 data_idgsm_pos = datasim.SystemData(A, B, X_idgsm_pos, Z_idgsm_pos, U_idgsm_pos, Phi11, Phi12, Phi22);
 [sol_idgsm_pos, ~, ~, ~, ~] = proposed.solve_sdp(data_idgsm_pos, gamma);
 delta_idgsm_pos = sol_idgsm_pos.delta;

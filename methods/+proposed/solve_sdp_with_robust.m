@@ -96,9 +96,6 @@ sol.F1 = value(const_mat);
 K = Um*L_val*(Xm*L_val)^(-1);
 sol.K = K;
 
-
-
-
 % -------------------------
 % Dual values (Lagrange multipliers)
 % -------------------------
@@ -111,6 +108,4 @@ catch ME
     error('solve_sdp_with_robust:DualFailed', ...
         'Dual変数の取得に失敗しました: %s', ME.message);
 end
-
 end
-

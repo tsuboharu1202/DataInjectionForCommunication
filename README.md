@@ -15,43 +15,58 @@
 
 ```
 ForCommunication/
-├── +cfg/                    # 設定クラス
-│   ├── Const.m             # 定数定義（サンプル数、ステップサイズなど）
-│   └── AttackType.m        # 攻撃タイプの定義
-├── basic_src/               # 基本機能
-│   ├── +datasim/           # データ生成・シミュレーション
-│   │   ├── make_lti.m      # LTIシステム生成
+├── +cfg/                       # 設定クラス
+│   ├── Const.m                # 定数定義（サンプル数、ステップサイズなど）
+│   ├── AttackType.m           # 攻撃タイプの定義
+│   ├── System.m               # デフォルトシステム設定
+│   ├── SDP.m                  # SDP関連設定
+│   └── SaveConfig.m           # 結果保存設定
+├── core/                       # コア機能
+│   ├── +datasim/              # データ生成・シミュレーション
+│   │   ├── make_lti.m         # LTIシステム生成
 │   │   ├── simulate_openloop_stable.m  # 安定な開ループシミュレーション
-│   │   └── SystemData.m    # システムデータクラス
-│   └── +visualize/         # 可視化機能
-├── com_src/                 # 主要機能
-│   ├── +original_thesis/   # 論文のSDP解法
-│   │   ├── solve_sdp.m     # SDP問題を解く
-│   │   └── build_lmi_blocks.m  # LMIブロック構築
-│   ├── +regularization_sdp/  # 正則化付きSDP解法
-│   │   └── solve_sdp.m
-│   ├── +implicit/           # Implicit Differentiation
-│   │   ├── dtDelta_dD.m    # 勾配計算メイン関数
-│   │   └── +G_grad/        # KKT条件の各項（G1-G15）
-│   ├── +attack/             # データ注入攻撃
-│   │   ├── execute_attack.m # 攻撃実行
-│   │   └── calc_grad.m      # 勾配計算
-│   └── +helper/             # ヘルパー関数
-│       └── hinfnorm_AK.m   # H∞ノルム計算
-├── scripts/                 # デモスクリプト
-│   ├── demo_sdp.m          # SDP解法のデモ
-│   ├── demo_implicit_grad.m # 勾配計算のデモ
-│   └── demo_attack.m       # 攻撃シミュレーションのデモ
-├── doc/                     # ドキュメント
-│   └── kkt_implicit_differentiation.tex  # KKT条件とImplicit Differentiationの理論
-├── Experiment/              # 実験用スクリプトとデータ
-└── startup.m                # パス設定スクリプト
+│   │   ├── simulate_openloop.m # 開ループシミュレーション
+│   │   └── SystemData.m       # システムデータクラス
+│   ├── +input/                # 入力生成
+│   │   └── make_inputU.m      # 入力信号生成
+│   └── +helper/               # ヘルパー関数
+│       └── hinfnorm_AK.m      # H∞ノルム計算
+├── methods/                    # SDP解法
+│   ├── +baseline/             # ベースライン手法（論文のSDP）
+│   │   ├── solve_sdp.m        # SDP問題を解く
+│   │   ├── build_lmi_blocks.m # LMIブロック構築
+│   │   └── +gradient/         # 勾配計算
+│   ├── +proposed/             # 提案手法（正則化付きSDP）
+│   │   ├── solve_sdp.m        # 正則化付きSDP
+│   │   ├── solve_sdp_with_robust.m  # ロバスト制約付きSDP
+│   │   └── +gradient/         # 勾配計算
+│   └── +takakiSenpai/         # 量子化SDP
+├── attack/                     # データ注入攻撃
+│   ├── +algorithms/           # 攻撃アルゴリズム
+│   │   ├── execute_attack.m   # 攻撃実行（統一インターフェース）
+│   │   ├── dgsm_delta.m       # 直接勾配符号法
+│   │   ├── idgsm_delta.m      # 反復勾配符号法
+│   │   ├── make_data_adv.m    # 攻撃データ生成
+│   │   └── projector.m        # ノルム制約投影
+│   └── +common/               # 共通処理
+│       └── calc_grad.m        # 勾配計算
+├── demos/                      # デモスクリプト
+│   ├── demo_sdp.m             # SDP解法のデモ
+│   ├── demo_attack.m          # 攻撃シミュレーションのデモ
+│   └── demo_implicit_grad.m   # 勾配計算のデモ
+├── Experiment/                 # 実験
+│   ├── _template/             # 実験テンプレート
+│   ├── MethodComparison/      # 手法比較実験
+│   └── TradeoffAnalysis/      # トレードオフ分析
+├── doc/                        # ドキュメント
+├── _archive/                   # アーカイブ（旧コード）
+└── startup.m                   # パス設定スクリプト
 ```
 
 ## セットアップ
 
 1. **MATLABの起動**
-   - MATLAB R2025a以降を推奨
+   - MATLAB R2023a以降を推奨
 
 2. **必要なツールボックス**
    - YALMIP（SDPソルバー）
@@ -66,91 +81,111 @@ ForCommunication/
 
 ## 基本的な使用方法
 
-### 1. SDP解法のデモ
+### 1. SDP解法
 
 ```matlab
-% scripts/demo_sdp.m を実行
-demo_sdp
+% システム設定
+A = cfg.System.A;
+B = cfg.System.B;
+[n, m] = cfg.System.getDimensions();
+T = cfg.System.getSampleCount();
+
+% データ生成
+V = make_inputU(m, T);
+[X, Z, U] = datasim.simulate_openloop_stable(A, B, V);
+
+% SystemData作成（Phi自動生成）
+data = datasim.SystemData.create(A, B, X, Z, U);
+
+% ベースラインSDP
+[sol, K, ~, ~, ~] = baseline.solve_sdp(data);
+
+% 提案手法SDP（gamma必須）
+gamma = 1e3;
+[sol, K, delta, ~, ~] = proposed.solve_sdp(data, gamma);
 ```
 
-このスクリプトは：
-- LTIシステムを生成
-- データを生成
-- 元の論文のSDP解法と正則化付きSDP解法を実行
-- H∞ノルムを計算して比較
-
-### 2. Implicit Differentiationによる勾配計算
+### 2. データ注入攻撃
 
 ```matlab
-% scripts/demo_implicit_grad.m を実行
-demo_implicit_grad
+% 攻撃オプション（gamma必須）
+opts = struct();
+opts.gamma = 1e3;
+opts.epsilon = 1e-3;
+opts.direction = 'positive';  % deltaを大きくする
+opts.save_history = true;
+
+% 攻撃実行
+[X_adv, Z_adv, U_adv, history] = algorithms.execute_attack(...
+    data, cfg.AttackType.IMPLICIT_IDGSM_DELTA, opts);
 ```
 
-このスクリプトは：
-- SDPを解く
-- KKT条件を用いて勾配を計算
-- 行列のランクを確認
-
-### 3. データ注入攻撃のシミュレーション
+### 3. ノイズ付きシミュレーション
 
 ```matlab
-% scripts/demo_attack.m を実行
-demo_attack
+% オプションでノイズを指定
+sim_opts = struct('noise_std', 0.01);
+[X, Z, U] = datasim.simulate_openloop_stable(A, B, V, [], sim_opts);
 ```
-
-このスクリプトは：
-- 元のシステムでSDPを解く
-- データ注入攻撃を実行
-- 攻撃後のシステム性能を評価
 
 ## 主要な関数
 
 ### SDP解法
 
-- `original_thesis.solve_sdp(data, opts)`: 論文のSDP解法
-- `regularization_sdp.solve_sdp(data, opts)`: 正則化付きSDP解法
+| 関数 | 説明 |
+|-----|------|
+| `baseline.solve_sdp(data)` | 論文のSDP解法 |
+| `proposed.solve_sdp(data, gamma)` | 正則化付きSDP（gamma必須） |
+| `proposed.solve_sdp_with_robust(data, epsilon, gamma)` | ロバスト制約付きSDP |
 
-### 勾配計算
+### 攻撃
 
-- `implicit.dtDelta_dD(...)`: Implicit Differentiationによる勾配計算
+| 関数 | 説明 |
+|-----|------|
+| `algorithms.execute_attack(data, method, opts)` | 統一攻撃インターフェース |
+| `algorithms.dgsm_delta(data, opts)` | 直接勾配符号法 |
+| `algorithms.idgsm_delta(data, opts)` | 反復勾配符号法 |
 
-### 攻撃実行
+### ヘルパー
 
-- `attack.execute_attack(data, attack_type, ...)`: データ注入攻撃の実行
-
-### ヘルパー関数
-
-- `helper.hinfnorm_AK(A, B, K)`: 閉ループシステム `G_{A,K}(z) = K(zI - A - BK)^{-1}B` のH∞ノルムを計算
+| 関数 | 説明 |
+|-----|------|
+| `helper.hinfnorm_AK(A, B, K)` | H∞ノルム計算 |
+| `cfg.System.calcRhoRough(A)` | 理論的下界計算 |
 
 ## 設定
 
-`+cfg/Const.m`で以下の定数を設定できます：
+### 必須パラメータ（デフォルト値なし）
 
-- `SAMPLE_COUNT`: サンプル数（デフォルト: 20）
-- `FD_STEP`: 数値微分のステップサイズ
-- `ATTACKER_UPPERLIMIT`: 攻撃側の制約上限
-- `EPSILON`: 許容誤差
-- `NOISE_BOUND`: ノイズの上限
+全ての実験・攻撃で以下のパラメータを**明示的に指定**してください：
+
+| パラメータ | 説明 | 例 |
+|-----------|------|-----|
+| `T` | サンプル数 | 20 |
+| `gamma` | 正則化パラメータ | 1e3 |
+| `epsilon` | 攻撃強度 | 1e-3 |
+| `alpha` | IDGSMステップサイズ | 1e-4 |
+| `max_iteration` | IDGSM最大反復回数 | 30 |
+| `direction` | 攻撃方向 | 'positive' or 'negative' |
+
+### cfg.System（システム設定）
+
+デフォルトのシステム行列（A, B）や、Phi行列の生成メソッドを提供。
+
+### cfg.SDP（SDP設定）
+
+| 定数 | 説明 |
+|-----|------|
+| `TOLERANCE_MARGIN` | 判定マージン（1.01 = 1%） |
+| `SOLVER_VERBOSE` | ソルバー出力（0: 非表示） |
+
+**注意**: `gamma` はデフォルト値を提供しません。実験ごとに明示的に指定してください。
 
 ## エラー処理
 
 - SDPが解けない場合、`error`を出して処理を中断します（適当な値を返しません）
-- Dual変数の取得に失敗した場合も同様に`error`を出します
-
-## 理論的背景
-
-詳細な理論は `doc/kkt_implicit_differentiation.tex` を参照してください。このドキュメントには以下が含まれます：
-
-- SDP問題の定式化
-- KKT条件
-- Implicit Differentiationによる勾配計算
-- 各LMIブロック（F1, F2, F3）の定義と微分
-
-## 注意事項
-
-- プロジェクトはMATLABのパッケージ（`+`で始まるディレクトリ）を使用しています
-- `startup.m`を実行してパスを設定してください
-- SDPソルバー（MOSEKなど）が正しく設定されていることを確認してください
+- 必須パラメータ（gamma等）が指定されていない場合もエラーを出します
+- エラーメッセージは日本語で統一されています
 
 ## ライセンス
 
@@ -159,4 +194,3 @@ demo_attack
 ## 作者
 
 （必要に応じて作者情報を追加）
-

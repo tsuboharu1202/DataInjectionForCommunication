@@ -23,4 +23,4 @@ clear classes
 rehash toolboxcache
 
 % 動作確認（コメントアウト可）
-% assert(exist('cfg.Const','class')==8, 'cfg.Const not visible. Check paths.');
+% assert(exist('cfg.System','class')==8, 'cfg.System not visible. Check paths.');

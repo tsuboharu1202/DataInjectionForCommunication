@@ -1,6 +1,5 @@
 function [sol, K, Y, L, diagnostics] = solve_sdp(data, opts)
 
-
 if nargin < 2 || isempty(opts), opts = struct(); end
 if ~isfield(opts,'verbose'),   opts.verbose   = 0;     end
 if ~isfield(opts,'solver'),    opts.solver    = 'mosek'; end
@@ -13,7 +12,6 @@ Z     = data.Z;     % n×T
 Xm     = data.X;    % n×T
 Um     = data.U;    % m×T  (m=1 でも可)
 
-Gamma_Matrix = [Um;Xm];
 
 Phi11  = data.Phi11;
 Phi12  = data.Phi12;

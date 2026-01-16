@@ -1,25 +1,17 @@
 % U生成→データ生成→SDP→表示の最小デモ
 clear; clc; close all;
 
-% 1) 連続の種 or 再現性
-% rng(1);
-
-% 2) システム＆重み
-[n,m,T] = deal(3,1,cfg.Const.SAMPLE_COUNT);
-[A,B] = datasim.make_lti(n,m);
-
-
-
-A=[-0.192, -0.936, -0.814;
-    -0.918, +0.729, -0.724;
-    -0.412, -0.135, -0.516];
-B=[-0.554; 0.735; 0.528];
+% 1) システム設定（cfg.Systemから取得）
+A = cfg.System.A;
+B = cfg.System.B;
+[n, m] = cfg.System.getDimensions();
+T = cfg.System.getSampleCount();
 
 % disp('A');disp(A);
 % disp('B');disp(B);
 
 % 3) 入力とデータ取得
-V = make_inputU(m);
+V = make_inputU(m, T);
 % [X,Z,U] = datasim.simulate_openloop_stable(A,B,V);
 [X,Z] = datasim.simulate_openloop(A,B,V);
 U = V;
@@ -27,7 +19,7 @@ U = V;
 W = Z - A*X - B*U;   % n×T
 
 Phi11 = 1e-1*eye(n);     % 5%マージン
-% Phi11 = cfg.Const.SAMPLE_COUNT * eye(n);
+% Phi11 = T * eye(n);
 Phi12 = zeros(n,T);
 Phi22 = -eye(T);
 
@@ -46,7 +38,7 @@ rand_mat_inv = inv(rand_mat);
 B2 = rand_mat*B;
 disp("B");disp(B);
 disp("B2");disp(B2);
-V2=make_inputU(m);
+V2 = make_inputU(m, T);
 [X2,Z2,U2] = datasim.simulate_openloop_stable(A,B2,V2);
 data2 = datasim.SystemData(A,B2,X2,Z2,U2,Phi11,Phi12,Phi22);
 [sol_ori2, K_ori2, Y_ori2, L_ori2, diagnostics_ori2] = baseline.solve_sdp(data2);

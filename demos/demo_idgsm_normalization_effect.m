@@ -17,17 +17,19 @@ fprintf('=== IDGSM正規化の効果評価テスト ===\n\n');
 % パラメータ設定
 % ============================================
 n_systems = 10;  % システム数
-[n, m, T] = deal(3, 1, cfg.Const.SAMPLE_COUNT);
+[n, m] = cfg.System.getDimensions();
+T = cfg.System.getSampleCount();
 
 % IDGSMパラメータ
-eps_att = cfg.Const.ATTACKER_UPPERLIMIT;
+eps_att = 1e-3;  % 攻撃強度
 direction = 'negative';  % deltaを小さくする方向
-gamma = 1e3;
+gamma = 1e3;  % 正則化パラメータ
 
-% Phi設定
-Phi11 = 1e-1 * eye(n);
-Phi12 = zeros(n, T);
-Phi22 = -eye(T);
+% Phi設定（cfg.Systemから取得）
+Phi = cfg.System.getDefaultPhi(n, T);
+Phi11 = Phi.Phi11;
+Phi12 = Phi.Phi12;
+Phi22 = Phi.Phi22;
 
 % 結果を保存する配列
 results = struct();
@@ -83,7 +85,7 @@ while sys_count < n_systems
         fprintf('  Aの固有値（実部最大）: %.4f (不安定)\n', max_real);
         
         % データ生成
-        V = make_inputU(m);
+        V = make_inputU(m, T);
         [X, Z, U] = datasim.simulate_openloop_stable(A, B, V);
         
         data = datasim.SystemData(A, B, X, Z, U, Phi11, Phi12, Phi22);
@@ -105,11 +107,14 @@ while sys_count < n_systems
         
         % IDGSM（正規化あり）を実行
         fprintf('  IDGSM（正規化あり）を実行...\n');
-        opts_with_norm = struct('gamma', gamma, 'normalize_grad', true);
+        opts_with_norm = struct();
+        opts_with_norm.gamma = gamma;
+        opts_with_norm.epsilon = eps_att;
+        opts_with_norm.direction = direction;
+        opts_with_norm.normalize_grad = true;
         
         try
-            [X_idgsm_norm, Z_idgsm_norm, U_idgsm_norm, history_norm] = algorithms.idgsm_delta(...
-                data, false, [], [], eps_att, direction, false, opts_with_norm);
+            [X_idgsm_norm, Z_idgsm_norm, U_idgsm_norm, history_norm] = algorithms.idgsm_delta(data, opts_with_norm);
             
             % 最終SDPを解く
             data_final_norm = datasim.SystemData(A, B, X_idgsm_norm, Z_idgsm_norm, U_idgsm_norm, Phi11, Phi12, Phi22);
@@ -132,11 +137,14 @@ while sys_count < n_systems
         
         % IDGSM（正規化なし）を実行
         fprintf('  IDGSM（正規化なし）を実行...\n');
-        opts_without_norm = struct('gamma', gamma, 'normalize_grad', false);
+        opts_without_norm = struct();
+        opts_without_norm.gamma = gamma;
+        opts_without_norm.epsilon = eps_att;
+        opts_without_norm.direction = direction;
+        opts_without_norm.normalize_grad = false;
         
         try
-            [X_idgsm_no_norm, Z_idgsm_no_norm, U_idgsm_no_norm, history_no_norm] = algorithms.idgsm_delta(...
-                data, false, [], [], eps_att, direction, false, opts_without_norm);
+            [X_idgsm_no_norm, Z_idgsm_no_norm, U_idgsm_no_norm, history_no_norm] = algorithms.idgsm_delta(data, opts_without_norm);
             
             % 最終SDPを解く
             data_final_no_norm = datasim.SystemData(A, B, X_idgsm_no_norm, Z_idgsm_no_norm, U_idgsm_no_norm, Phi11, Phi12, Phi22);

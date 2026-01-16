@@ -93,9 +93,6 @@ sol.F1 = value(const_mat);
 K = Um*L_val*(Xm*L_val)^(-1);
 sol.K = K;
 
-
-
-
 % -------------------------
 % Dual values (Lagrange multipliers)
 % -------------------------

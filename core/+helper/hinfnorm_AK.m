@@ -30,6 +30,4 @@ A_cl = A + B * K;
 % 状態空間表現: (A_cl, B, K, 0)
 sys = ss(A_cl, B, K, zeros(m_k, m), -1);  % -1は離散時間を意味
 hinf_norm = hinfnorm(sys);
-
 end
-

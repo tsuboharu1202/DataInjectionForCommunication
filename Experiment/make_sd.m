@@ -3,11 +3,11 @@ function data_ori = make_sd(epsilon, noise_bound)
     rng();
 
     % 2) システム＆重み
-    [n,m,T] = deal(3,1,cfg.Const.SAMPLE_COUNT);
+    [n,m,T] = deal(3, 1, 20);  % システム次元とサンプル数
     [A,B] = datasim.make_lti();
 
     % 3) 入力とデータ取得
-    V = make_inputU(m);
+    V = make_inputU(m, T);
     [X,Z,U] = datasim.simulate_openloop_stable(A,B,V);
     % U = V;
     % [X,Z] = datasim.simulate_openloop(A,B,U);
@@ -17,7 +17,7 @@ function data_ori = make_sd(epsilon, noise_bound)
     E1 = [1,1,1];       
     E2 = 1;       
 
-    Phi11 = noise_bound*cfg.Const.SAMPLE_COUNT * eye(n);
+    Phi11 = noise_bound * T * eye(n);
     Phi12 = zeros(n,T);
     Phi22 = -eye(T);    
 

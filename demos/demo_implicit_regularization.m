@@ -14,32 +14,28 @@ fprintf('=== Delta勾配方向への攻撃テスト ===\n\n');
 % ============================================
 fprintf('1. モデル作成とSDPを解く...\n');
 
-% システムサイズ
-[n, m, T] = deal(3, 1, cfg.Const.SAMPLE_COUNT);
-
-% システム生成
-A = [-0.192, -0.936, -0.814;
-    -0.918,  0.729, -0.724;
-    -0.412,  0.735, -1.516];
-B = [-0.554;
-    0.735;
-    0.528];
+% システム設定（cfg.Systemから取得）
+A = cfg.System.A;
+B = cfg.System.B;
+[n, m] = cfg.System.getDimensions();
+T = cfg.System.getSampleCount();
 
 disp('eig A');
 disp(eig(A));
 
 % 入力とデータ取得
-V = make_inputU(m);
+V = make_inputU(m, T);
 [X, Z, U] = datasim.simulate_openloop_stable(A, B, V);
 
-% Phi設定
-Phi11 = 1e-1 * eye(n);
-Phi12 = zeros(n, T);
-Phi22 = -eye(T);
+% Phi設定（cfg.Systemから取得）
+Phi = cfg.System.getDefaultPhi(n, T);
+Phi11 = Phi.Phi11;
+Phi12 = Phi.Phi12;
+Phi22 = Phi.Phi22;
 
 % 正則化付きSDPを解く
 data = datasim.SystemData(A, B, X, Z, U, Phi11, Phi12, Phi22);
-gamma = 1e3;
+gamma = 1e3;  % 正則化パラメータ
 [sol, ~, ~, ~, ~] = proposed.solve_sdp(data, gamma);
 
 delta_before = sol.delta;

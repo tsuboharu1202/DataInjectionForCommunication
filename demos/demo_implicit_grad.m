@@ -15,8 +15,9 @@ fprintf('=== Implicit Differentiation 勾配計算テスト ===\n\n');
 % ============================================
 fprintf('1. モデル作成とSDPを解く...\n');
 
-% システムサイズ
-[n, m, T] = deal(4, 3, cfg.Const.SAMPLE_COUNT);  % 小さめのサイズでテスト
+% システムサイズ（このデモは大きめのシステムでテスト）
+n = 4; m = 3;  % 小さめのサイズでテスト
+T = cfg.System.getSampleCount();
 fprintf('  システムサイズ: n=%d, m=%d, T=%d\n', n, m, T);
 
 % システム生成
@@ -24,7 +25,7 @@ fprintf('  システムサイズ: n=%d, m=%d, T=%d\n', n, m, T);
 fprintf('  システム生成完了\n');
 
 % 入力とデータ取得
-V = make_inputU(m);
+V = make_inputU(m, T);
 [X, Z, U] = datasim.simulate_openloop_stable(A, B, V);
 fprintf('  データ生成完了\n');
 
