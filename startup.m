@@ -1,18 +1,21 @@
 % startup.m  (ForCommunication 直下)
 projroot = fileparts(mfilename('fullpath'));
 
-% 親だけ通す（+cfg 自体は通さない）
+% ルートを追加（+cfg が見える）
 addpath(projroot);
-addpath(genpath(fullfile(projroot,'basic_src')));
+
+% === 新しいフォルダ構造 ===
+addpath(genpath(fullfile(projroot,'core')));
+addpath(genpath(fullfile(projroot,'methods')));
+addpath(genpath(fullfile(projroot,'attack')));
+addpath(genpath(fullfile(projroot,'demos')));
+addpath(genpath(fullfile(projroot,'Experiment')));
+
+% === 旧フォルダ構造（アーカイブ、互換性のため一時的に残す） ===
+addpath(genpath(fullfile(projroot,'_archive','basic_src')));
+addpath(genpath(fullfile(projroot,'_archive','com_src')));
+addpath(genpath(fullfile(projroot,'_archive','scripts')));
 addpath(genpath(fullfile(projroot,'resources')));
-addpath(genpath(fullfile(projroot,'scripts')));
-
-% パッケージ（+で始まるフォルダ）を先に追加して優先順位を上げる
-addpath(genpath(fullfile(projroot,'com_src','+attack')));
-addpath(genpath(fullfile(projroot,'com_src','+original_thesis')));
-% その後、com_src全体を追加（ForTakakiSenpaiThesisなども含む）
-addpath(genpath(fullfile(projroot,'com_src')));
-
 
 % 衝突回避
 clear cfg

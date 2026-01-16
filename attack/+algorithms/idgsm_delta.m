@@ -37,7 +37,7 @@ end
 if nargin < 4 || isempty(escape_local_min)
     % 以前は局所最適解回避のためのランダムノイズ付加に使用していたが、
     % 現在はランダムノイズを加えない方針のため、フラグは保持のみで未使用。
-    escape_local_min = false;
+    % escape_local_min = false;
 end
 if nargin < 5 || isempty(epsilon)
     epsilon = cfg.Const.ATTACKER_UPPERLIMIT;
@@ -98,7 +98,7 @@ while is_continue
     fprintf('iter: %d\n', iter);
     
     % 勾配を計算（regularizationのみ）
-    [X_grad, Z_grad, U_grad] = attack.calc_grad(current_sd, opts);
+    [X_grad, Z_grad, U_grad] = common.calc_grad(current_sd, opts);
     
     % 方向を適用
     if strcmpi(direction, 'positive')
@@ -207,7 +207,7 @@ while is_continue
     checkX_temp = false(size(ori_sd.X));
     checkZ_temp = false(size(ori_sd.Z));
     checkU_temp = false(size(ori_sd.U));
-    [dX, dZ, dU, ~, ~, ~] = attack.projector(dX, dZ, dU, checkX_temp, checkZ_temp, checkU_temp, epsilon);
+    [dX, dZ, dU, ~, ~, ~] = algorithms.projector(dX, dZ, dU, checkX_temp, checkZ_temp, checkU_temp, epsilon);
     
     X_adv = ori_sd.X + dX;
     Z_adv = ori_sd.Z + dZ;
@@ -221,7 +221,7 @@ while is_continue
     if isfield(opts, 'gamma')
         gamma = opts.gamma;
     end
-    [sol_temp, ~, ~, ~, diagnostics_temp] = regularization_sdp.solve_sdp(current_sd, gamma);
+    [sol_temp, ~, ~, ~, diagnostics_temp] = proposed.solve_sdp(current_sd, gamma);
     
     % SDPがinfeasibleまたはエラーの場合はエラーを投げる
     if diagnostics_temp.problem ~= 0
