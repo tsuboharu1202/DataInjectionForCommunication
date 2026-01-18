@@ -57,7 +57,7 @@ Lambda3 = sol.Lambda3;
 Gamma = [U; X];
 Pi = eye(T) - pinv(Gamma)*Gamma;
 
-dtDelta_dD = implicit_regularization.dtDelta_dD(n,m,T,B,X,Z,U,Pi,gamma,Gamma,L_val,Lambda1,Lambda2,F1,Lambda3);
+dtDelta_dD = proposed.gradient.dtDelta_dD(n,m,T,B,X,Z,U,Pi,gamma,Gamma,L_val,Lambda1,Lambda2,F1,Lambda3);
 
 fprintf('  勾配計算完了\n');
 

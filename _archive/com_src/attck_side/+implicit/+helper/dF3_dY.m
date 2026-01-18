@@ -1,6 +1,6 @@
-function dF3_dY = dF3_dY(n,m)
-E1 = [speye(n);
-    zeros(m,n)];
+% function dF3_dY = dF3_dY(n,m)
+% E1 = [speye(n);
+%     zeros(m,n)];
 
 
-dF3_dY = kron(E1,E1);
+% dF3_dY = kron(E1,E1);
