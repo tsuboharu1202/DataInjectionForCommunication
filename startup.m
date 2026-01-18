@@ -14,7 +14,7 @@ if exist(tools_dir, 'dir')
 end
 
 % === 新しいフォルダ構造 ===
-addpath(genpath(fullfile(projroot,'core')));
+addpath(genpath(fullfile(projroot,'+core')));
 addpath(genpath(fullfile(projroot,'methods')));
 addpath(genpath(fullfile(projroot,'attack')));
 addpath(genpath(fullfile(projroot,'demos')));
