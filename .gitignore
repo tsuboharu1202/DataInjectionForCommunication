@@ -16,11 +16,10 @@
 # MATLABプロジェクトファイル
 *.prj
 resources/
-Experiment/
 
-# 実験結果データ（CSV、MATファイル）
-Experiment/DataSet/*.csv
-Experiment/DataSet/*.mat
+# 実験結果の重いデータのみ除外（.figは残す）
+Experiment/**/*.mat
+Experiment/**/*.csv
 
 # ログファイル
 *.log
