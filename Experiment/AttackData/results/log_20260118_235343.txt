@@ -137,3 +137,12 @@ delta_temp: 5.856228e-01
 iter: 25
 delta_temp: 5.856252e-01
 iter: 26
+delta_temp: 5.856290e-01
+iter: 27
+delta_temp: 5.856303e-01
+iter: 28
+delta_temp: 5.856348e-01
+iter: 29
+delta_temp: 5.856366e-01
+iter: 30
+delta_temp: 5.856395e-01
