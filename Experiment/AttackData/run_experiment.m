@@ -188,6 +188,21 @@ for trial = 1:cfg.trial
         end
     end
     
+    % ========== 各データセットごとに保存 ==========
+    if cfg.save_results
+        dataset_filename = sprintf('results/dataset_%03d_%s.mat', trial, datestr(now, 'yyyymmdd_HHMMSS'));
+        dataset_data = struct();
+        dataset_data.original = results.datasets(trial).original;
+        dataset_data.attacks = results.datasets(trial).attacks;
+        dataset_data.cfg = cfg;
+        dataset_data.rho_rough = rho_rough;
+        dataset_data.trial = trial;
+        dataset_data.timestamp = datestr(now);
+        
+        save(dataset_filename, 'dataset_data', '-v7.3');
+        fprintf('  データセット %d を保存しました: %s\n', trial, dataset_filename);
+    end
+    
     fprintf('\n');
 end
 
@@ -224,14 +239,14 @@ if ~isempty(delta_changes)
     fprintf('  最大: %.2f%%\n', max(delta_changes));
 end
 
-%% ========== 結果保存 ==========
-if cfg.save_results
-    results_filename = sprintf('results/attack_data_%s.mat', datestr(now, 'yyyymmdd_HHMMSS'));
-    save(results_filename, 'results', 'cfg', 'rho_rough', '-v7.3');  % -v7.3で大きなデータも保存可能
-    fprintf('\n結果を保存しました: %s\n', results_filename);
-    fprintf('  データセット数: %d\n', cfg.trial);
-    fprintf('  各セットの攻撃数: %d (epsilon数)\n', length(cfg.attack_eps_list));
-end
+%% ========== 結果保存（まとめて保存する場合） ==========
+% 各データセットは個別に保存済み
+% 必要に応じて、全データをまとめて保存する場合は以下を有効化
+% if cfg.save_results
+%     results_filename = sprintf('results/attack_data_all_%s.mat', datestr(now, 'yyyymmdd_HHMMSS'));
+%     save(results_filename, 'results', 'cfg', 'rho_rough', '-v7.3');
+%     fprintf('\n全データをまとめて保存しました: %s\n', results_filename);
+% end
 
 %% ========== 終了 ==========
 diary off;

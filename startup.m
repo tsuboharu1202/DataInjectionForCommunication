@@ -4,8 +4,31 @@ projroot = fileparts(mfilename('fullpath'));
 % ルートを追加（+cfg が見える）
 addpath(projroot);
 
-% === 外部ツール（ローカル用） ===
-tools_dir = '/Users/tsuboharu1202/Documents/MATLAB/_tools';
+
+% --- tools_dir を local / online で自動切替 ---
+% --- tools_dir を local / online で自動切替（堅牢版） ---
+tools_dir_local = '/Users/tsuboharu1202/Documents/MATLAB/_tools';
+
+% Onlineのドライブ根を推定（MATLAB_DRIVEが空でも動く）
+matlab_drive = getenv('MATLAB_DRIVE');   % 取れれば使う
+if isempty(matlab_drive)
+    matlab_drive = userpath;            % ここが /MATLAB Drive になってる
+end
+
+% userpath が "pathsep" 区切りで複数返す場合に備える
+matlab_drive = strsplit(matlab_drive, pathsep);
+matlab_drive = matlab_drive{1};
+
+tools_dir_online = fullfile(matlab_drive, '_tools');
+
+tools_dir = '';
+if exist(tools_dir_local, 'dir')
+    tools_dir = tools_dir_local;
+elseif exist(tools_dir_online, 'dir')
+    tools_dir = tools_dir_online;
+end
+
+
 if exist(tools_dir, 'dir')
     addpath(genpath(fullfile(tools_dir, 'YALMIP')));
     addpath(genpath(fullfile(tools_dir, 'MOSEK', '11.0', 'toolbox')));
