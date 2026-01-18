@@ -2,10 +2,10 @@ function test_dF_dD_FD(n,m,T,B,L,delta,D)
 
 fprintf('\n=== dF_dD 有限差分検証 ===\n\n');
 
-F1_base = helper.F1_of_D(n,m,T,B,L,delta,D);
+F1_base = proposed.gradient.helper.F1_of_D(n,m,T,B,L,delta,D);
 vecF1_base = F1_base(:);
 
-J = helper.dF_dD(n,m,T,L); % あなたの dF_dD
+J = proposed.gradient.helper.dF_dD(n,m,T,L); % あなたの dF_dD
 fprintf('dF_dD size = %dx%d (期待: %dx%d)\n', size(J,1), size(J,2), ...
     (2*n+2*m)^2, (2*n+m)*T);
 
@@ -20,7 +20,7 @@ for trial = 1:nTrials
     for e = 1:numel(eps_list)
         eps = eps_list(e);
         
-        F1_p = helper.F1_of_D(n,m,T,B,L,delta, D + eps*E);
+        F1_p = proposed.gradient.helper.F1_of_D(n,m,T,B,L,delta, D + eps*E);
         lhs = (F1_p(:) - vecF1_base)/eps;   % FD
         
         rhs = J * vecE;                    % analytic

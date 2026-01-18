@@ -14,7 +14,7 @@ sol.dLambda3 = sparse(n1_2,(n+m)*(n+m));
 sol.Lambda_Alpha = sparse(n1_2,1);
 sol.Lambda_Beta = sparse(n1_2,1);
 sol.Lambda_tDelta = sparse(n1_2,1);
-sol.Lambda_Y = speye(n1_2)-gradient.commutation(n,n);
+sol.Lambda_Y = speye(n1_2)-core.helper.commutation(n,n);
 sol.Data = sparse(n1_2,T*(2*n+m));
 
 sol.G15_row_without_Data = [sol.dL, sol.dY, sol.dAlpha, sol.dBeta, sol.dtDelta, sol.dLambda1, sol.dLambda3, sol.Lambda_Alpha, sol.Lambda_Beta, sol.Lambda_tDelta, sol.Lambda_Y];

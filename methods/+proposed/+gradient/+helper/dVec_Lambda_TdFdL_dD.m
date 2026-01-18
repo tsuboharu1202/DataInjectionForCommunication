@@ -18,7 +18,7 @@ LambdaU = (Lambda41')*Eu;
 
 I_T = speye(T);
 
-Cn1T = implicit.helper.commutation(n1,T);
+Cn1T = core.helper.commutation(n1,T);
 
 term1 = kron(LambdaX,I_T)*Cn1T;
 term2 = 2*kron(LambdaZ,I_T)*Cn1T;

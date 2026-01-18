@@ -4,9 +4,9 @@ function test_dVec_Lambda_TdFdL_dD_FD1(n,m,T,D,Lambda)
 
 fprintf('\n=== dVec(Lambda^T dF/dL)/dD FD1 check (single direction) ===\n');
 
-J = helper.dVec_Lambda_TdFdL_dD(n,m,T,Lambda); % (T*n) x (T*(2n+m))
+J = proposed.gradient.helper.dVec_Lambda_TdFdL_dD(n,m,T,Lambda); % (T*n) x (T*(2n+m))
 
-v0 = helper.Vec_Lambda_TdFdL_of_D(n,m,T,D,Lambda);
+v0 = proposed.gradient.helper.Vec_Lambda_TdFdL_of_D(n,m,T,D,Lambda);
 
 E = randn(size(D));
 e = E(:);
@@ -16,7 +16,7 @@ eps_list = [1e-6, 1e-7, 1e-8];
 for k = 1:numel(eps_list)
     eps = eps_list(k);
     
-    v1 = helper.Vec_Lambda_TdFdL_of_D(n,m,T, D + eps*E, Lambda);
+    v1 = proposed.gradient.helper.Vec_Lambda_TdFdL_of_D(n,m,T, D + eps*E, Lambda);
     
     lhs = (v1 - v0)/eps; % FD
     rhs = J * e;         % analytic

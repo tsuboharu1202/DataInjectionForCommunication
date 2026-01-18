@@ -1,6 +1,6 @@
 % function dpinvGamma_dGamma = dpinvGamma_dGamma(n,m,T,Gamma)
 
-% Cnm_T = implicit.helper.commutation(n+m,T);
+% Cnm_T = core.helper.commutation(n+m,T);
 % GGT = Gamma*Gamma';
 % GGT_inv = GGT^(-1);
 
@@ -13,7 +13,7 @@ function dpinvGamma_dGamma = dpinvGamma_dGamma(n,m,T,Gamma)
 p = n + m;    % rows of Gamma
 q = T;        % cols of Gamma
 
-Kpq = implicit.helper.commutation(p,q);   % vec(Gamma') = Kpq * vec(Gamma)
+Kpq = core.helper.commutation(p,q);   % vec(Gamma') = Kpq * vec(Gamma)
 
 G   = Gamma*Gamma';                        % p x p
 Ginv = G \ speye(p);                       % safer than G^(-1)

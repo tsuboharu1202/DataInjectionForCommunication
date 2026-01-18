@@ -25,7 +25,7 @@ sol.Lambda_tDelta = sparse(n1_2,1);
 % vec(Lambda_Y') = K vec(Lambda_Y)
 % したがって、d/dLambda_Y [vec(Y*Lambda_Y')] = (I ⊗ Y) K
 % 実際のコードでは K (I ⊗ Y) の形式を使用
-sol.Lambda_Y = kron(speye(n),Y)*gradient.commutation(n,n);
+sol.Lambda_Y = kron(speye(n),Y)*core.helper.commutation(n,n);
 sol.Data = sparse(n1_2,T*(2*n+m));
 
 sol.G14_row_without_Data = [sol.dL, sol.dY, sol.dAlpha, sol.dBeta, sol.dtDelta, sol.dLambda1, sol.dLambda3, sol.Lambda_Alpha, sol.Lambda_Beta, sol.Lambda_tDelta, sol.Lambda_Y];

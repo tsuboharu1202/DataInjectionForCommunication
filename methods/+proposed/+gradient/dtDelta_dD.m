@@ -1,14 +1,14 @@
 function dtDelta_dD = dtDelta_dD(n,m,T,B,X,Z,U,Pi,gamma,Gamma,L,Lambda,Lambda_P,F1,Lambda3)
 % Dの形状は D = [Z',X', U']'
 
-G1_sol = G_grad.G1_merge(n,m,B,T);
-G2_sol = G_grad.G2_merge(n,m,T,X,Z,U,Pi,gamma,Gamma,L,Lambda,Lambda_P,Lambda3);
-G3_sol = G_grad.G3_merge(n,m,T,X,Z,U,F1,L,Lambda,B);
-G4_sol = G_grad.G4_merge(n,m,T);
-G5_sol = G_grad.G5_merge(n,m,T,X,Lambda_P,L);
-G6_sol = G_grad.G6_merge(n,m,T);
-G7_sol = G_grad.G7_merge(n,m,T,X,L);
-G8_sol = G_grad.G8_merge(n,m,T);
+G1_sol = proposed.gradient.G_grad.G1_merge(n,m,B,T);
+G2_sol = proposed.gradient.G_grad.G2_merge(n,m,T,X,Z,U,Pi,gamma,Gamma,L,Lambda,Lambda_P,Lambda3);
+G3_sol = proposed.gradient.G_grad.G3_merge(n,m,T,X,Z,U,F1,L,Lambda,B);
+G4_sol = proposed.gradient.G_grad.G4_merge(n,m,T);
+G5_sol = proposed.gradient.G_grad.G5_merge(n,m,T,X,Lambda_P,L);
+G6_sol = proposed.gradient.G_grad.G6_merge(n,m,T);
+G7_sol = proposed.gradient.G_grad.G7_merge(n,m,T,X,L);
+G8_sol = proposed.gradient.G_grad.G8_merge(n,m,T);
 
 Matrix_H = [
     G1_sol.G1_row_without_Data;

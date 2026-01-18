@@ -8,8 +8,8 @@ sol.dAlpha = sparse(nm,1);
 sol.dBeta = sparse(nm,1);
 sol.dtDelta = sparse(nm,1);
 
-sol.dLambda1 = (-gradient.dF1_dL(n,m, B))';
-sol.dLambda3 = (-gradient.dF3_dL(n,m))';
+sol.dLambda1 = (-baseline.gradient.dF1_dL(n,m, B))';
+sol.dLambda3 = (-baseline.gradient.dF3_dL(n,m))';
 sol.Lambda_Alpha = sparse(nm,1);
 sol.Lambda_Beta = sparse(nm,1);
 sol.Lambda_tDelta = sparse(nm,1);

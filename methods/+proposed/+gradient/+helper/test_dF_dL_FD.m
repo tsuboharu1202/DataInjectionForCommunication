@@ -14,8 +14,8 @@ function test_dF_dL_FD(n, m, T, B, X, Z, U, L_val, delta_val)
 %   出力: なし（fprintfで結果を表示）
 %
 %   作成ファイル一覧:
-%       - helper.F1_of_L.m
-%       - helper.test_dF_dL_FD.m (このファイル)
+%       - proposed.gradient.helper.F1_of_L.m
+%       - proposed.gradient.helper.test_dF_dL_FD.m (このファイル)
 %
 %   呼び出し例:
 %       % demo_implicit_regularization.m または類似のスクリプトで:
@@ -25,7 +25,7 @@ function test_dF_dL_FD(n, m, T, B, X, Z, U, L_val, delta_val)
 %       delta_val = sol.delta;
 %
 %       % 一行で呼び出し:
-%       helper.test_dF_dL_FD(n, m, T, B, X, Z, U, L_val, delta_val);
+%       proposed.gradient.helper.test_dF_dL_FD(n, m, T, B, X, Z, U, L_val, delta_val);
 %
 %   または、名前空間を使わずに:
 %       test_dF_dL_FD(n, m, T, B, X, Z, U, L_val, delta_val);
@@ -38,7 +38,7 @@ fprintf('\n=== dF_dL 有限差分検証 ===\n\n');
 fprintf('--- サニティチェック ---\n');
 
 % F1_of_Lのサイズ確認
-F1_test = helper.F1_of_L(n, m, T, B, X, Z, U, L_val, delta_val);
+F1_test = proposed.gradient.helper.F1_of_L(n, m, T, B, X, Z, U, L_val, delta_val);
 fprintf('F1_of_L サイズ: %d×%d (期待: %d×%d)\n', ...
     size(F1_test,1), size(F1_test,2), 2*n+2*m, 2*n+2*m);
 if size(F1_test,1) ~= 2*n+2*m || size(F1_test,2) ~= 2*n+2*m
@@ -46,7 +46,7 @@ if size(F1_test,1) ~= 2*n+2*m || size(F1_test,2) ~= 2*n+2*m
 end
 
 % dF_dLのサイズ確認
-dF_dL = helper.dF_dL(n, m, T, X, Z, U);
+dF_dL = proposed.gradient.helper.dF_dL(n, m, T, X, Z, U);
 fprintf('dF_dL サイズ: %d×%d (期待: %d×%d)\n', ...
     size(dF_dL,1), size(dF_dL,2), (2*n+2*m)^2, T*n);
 if size(dF_dL,1) ~= (2*n+2*m)^2 || size(dF_dL,2) ~= T*n
@@ -65,7 +65,7 @@ eps_list = [1e-6, 1e-7, 1e-8];
 relerr_all = zeros(nTrials, length(eps_list));
 
 % ベースライン: F1(L_val)
-F1_base = helper.F1_of_L(n, m, T, B, X, Z, U, L_val, delta_val);
+F1_base = proposed.gradient.helper.F1_of_L(n, m, T, B, X, Z, U, L_val, delta_val);
 vec_F1_base = F1_base(:);
 
 for trial = 1:nTrials
@@ -80,7 +80,7 @@ for trial = 1:nTrials
         
         % 有限差分: lhs = (vec(F1(L+epsE)) - vec(F1(L))) / eps
         L_perturbed = L_val + eps * E;
-        F1_perturbed = helper.F1_of_L(n, m, T, B, X, Z, U, L_perturbed, delta_val);
+        F1_perturbed = proposed.gradient.helper.F1_of_L(n, m, T, B, X, Z, U, L_perturbed, delta_val);
         vec_F1_perturbed = F1_perturbed(:);
         
         lhs = (vec_F1_perturbed - vec_F1_base) / eps;

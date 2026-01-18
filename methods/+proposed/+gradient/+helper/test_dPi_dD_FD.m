@@ -6,10 +6,10 @@ fprintf('\n=== dPi_dD FD1 check (single direction) ===\n');
 
 % analytic Jacobian
 Gamma = [D(2*n+1:2*n+m,:); D(n+1:2*n,:)]; % [U;X]
-J = helper.dPi_dD(n,m,T,Gamma); % (T^2) x (T*(2n+m))
+J = proposed.gradient.helper.dPi_dD(n,m,T,Gamma); % (T^2) x (T*(2n+m))
 
 % base Pi
-Pi0 = helper.Pi_of_D(n,m,T,D);
+Pi0 = proposed.gradient.helper.Pi_of_D(n,m,T,D);
 v0  = Pi0(:);
 
 % random direction (single)
@@ -21,7 +21,7 @@ eps_list = [1e-6, 1e-7, 1e-8];
 for k = 1:numel(eps_list)
     eps = eps_list(k);
     
-    Pi1 = helper.Pi_of_D(n,m,T, D + eps*E);
+    Pi1 = proposed.gradient.helper.Pi_of_D(n,m,T, D + eps*E);
     v1  = Pi1(:);
     
     lhs = (v1 - v0)/eps;      % FD

@@ -21,7 +21,7 @@ function F1 = F1_of_L(n, m, T, B, X, Z, U, L, delta)
 %       - すべてdouble数値で動作（sdpvar不要）
 %
 %   使用例:
-%       F1 = helper.F1_of_L(n, m, T, B, X, Z, U, L_val, delta_val);
+%       F1 = proposed.gradient.helper.F1_of_L(n, m, T, B, X, Z, U, L_val, delta_val);
 
 % solve_sdp内の定義と完全に同じ
 Xm_L_Sym = (X*L + (X*L)')/2;

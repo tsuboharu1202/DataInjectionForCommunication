@@ -18,5 +18,5 @@ GPhi = G*Phi;
 
 dG_dD = kron(Eleft,Eright);
 
-dF2_dD = kron(GPhi,speye(n1))*dG_dD + kron(speye(n1), GPhi)*gradient.commutation(n1,n2)*dG_dD;
+dF2_dD = kron(GPhi,speye(n1))*dG_dD + kron(speye(n1), GPhi)*core.helper.commutation(n1,n2)*dG_dD;
 end

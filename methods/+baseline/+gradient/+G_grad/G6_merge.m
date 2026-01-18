@@ -12,8 +12,8 @@ sol = struct();
 % vec((F1-alpha*F2)*Lambda1') = (Lambda1 ⊗ I) vec(F1-alpha*F2)
 % したがって、d/dL [vec((F1-alpha*F2)*Lambda1')] = (Lambda1 ⊗ I) dvec(F1)/dL
 sub_matrix = kron(Lambda1,eye);
-sol.dL = sub_matrix*gradient.dF1_dL(n,m,B);
-sol.dY = sub_matrix*gradient.dF1_dY(n,m);
+sol.dL = sub_matrix*baseline.gradient.dF1_dL(n,m,B);
+sol.dY = sub_matrix*baseline.gradient.dF1_dY(n,m);
 
 % d/dalpha [vec((F1-alpha*F2)*Lambda1')] = (Lambda1 ⊗ I) d/dalpha [vec(F1-alpha*F2)]
 % d/dalpha [F1-alpha*F2] = -F2
@@ -44,13 +44,13 @@ sol.dtDelta = -Lambda1M11_withB(:);
 % vec(Lambda1') = K vec(Lambda1)
 % したがって、d/dLambda1 [vec((F1-alpha*F2)*Lambda1')] = (I ⊗ (F1-alpha*F2)) K
 % 実際のコードでは K (I ⊗ (F1-alpha*F2)) の形式を使用
-sol.dLambda1 = kron(eye, F1_minus_alphaF2)*gradient.commutation(3*n+m,3*n+m);
+sol.dLambda1 = kron(eye, F1_minus_alphaF2)*core.helper.commutation(3*n+m,3*n+m);
 sol.dLambda3 = sparse(n1_2,n2_2);
 sol.Lambda_Alpha = sparse(n1_2,1);
 sol.Lambda_Beta = sparse(n1_2,1);
 sol.Lambda_tDelta = sparse(n1_2,1);
 sol.Lambda_Y = sparse(n1_2,n*n);
-sol.Data = -alpha*sub_matrix*gradient.dF2_dD(n,m,B,T,G,Phi);
+sol.Data = -alpha*sub_matrix*baseline.gradient.dF2_dD(n,m,B,T,G,Phi);
 
 sol.G6_row_without_Data = [sol.dL, sol.dY, sol.dAlpha, sol.dBeta, sol.dtDelta, sol.dLambda1, sol.dLambda3, sol.Lambda_Alpha, sol.Lambda_Beta, sol.Lambda_tDelta, sol.Lambda_Y];
 end

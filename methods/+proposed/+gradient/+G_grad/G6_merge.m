@@ -5,7 +5,7 @@ sol = struct();
 sol.dL = sparse(n*n,n*T);
 sol.dLambda = sparse(n*n,n1*n1);
 sol.dtDelta = sparse(n*n,1);
-sol.dLambda_P = speye(n*n)-implicit.helper.commutation(n,n);
+sol.dLambda_P = speye(n*n)-core.helper.commutation(n,n);
 
 sol.Data = sparse(n*n,T*(2*n+m));
 sol.dLambda3 = sparse(n*n, n*n);

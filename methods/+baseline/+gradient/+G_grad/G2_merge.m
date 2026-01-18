@@ -9,8 +9,8 @@ sol.dAlpha = sparse(nn,1);
 sol.dBeta = sparse(nn,1);
 sol.dtDelta = sparse(nn,1);
 
-sol.dLambda1 = (-gradient.dF1_dY(n,m))';
-sol.dLambda3 = (-gradient.dF3_dY(n,m))';
+sol.dLambda1 = (-baseline.gradient.dF1_dY(n,m))';
+sol.dLambda3 = (-baseline.gradient.dF3_dY(n,m))';
 sol.Lambda_Alpha = sparse(nn,1);
 sol.Lambda_Beta = sparse(nn,1);
 sol.Lambda_tDelta = sparse(nn,1);

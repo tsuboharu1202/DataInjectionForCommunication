@@ -10,7 +10,7 @@ sol.dtDelta = sparse(n1_2,1);
 
 
 sol.dLambda1 = sparse(n1_2,(3*n+m)*(3*n+m));
-sol.dLambda3 = speye(n1_2)-gradient.commutation(n+m,n+m);
+sol.dLambda3 = speye(n1_2)-core.helper.commutation(n+m,n+m);
 sol.Lambda_Alpha = sparse(n1_2,1);
 sol.Lambda_Beta = sparse(n1_2,1);
 sol.Lambda_tDelta = sparse(n1_2,1);

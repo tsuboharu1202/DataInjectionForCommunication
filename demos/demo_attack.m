@@ -51,7 +51,7 @@ fprintf('  初期delta = %.6f\n', delta_init);
 % ============================================
 fprintf('\n2. 攻撃パラメータ設定...\n');
 
-eps_att = 1e-3;  % 攻撃強度
+eps_att = 1e-2;  % 攻撃強度
 
 fprintf('  攻撃強度: eps_att = %.2e\n', eps_att);
 fprintf('  gamma = %.2e\n', gamma);
@@ -94,6 +94,8 @@ fprintf('\n5. IDGSM攻撃（negative方向）- 正規化あり...\n');
 opts_idgsm_neg = struct();
 opts_idgsm_neg.gamma = gamma;
 opts_idgsm_neg.epsilon = eps_att;
+opts_idgsm_neg.alpha = 0.01;          % ステップサイズ
+opts_idgsm_neg.max_iteration = 40;     % 最大反復回数20
 opts_idgsm_neg.direction = 'negative';
 opts_idgsm_neg.save_history = true;
 opts_idgsm_neg.save_grad_norms = true;
@@ -117,6 +119,8 @@ fprintf('\n5b. IDGSM攻撃（negative方向）- 正規化なし...\n');
 opts_idgsm_neg_no_norm = struct();
 opts_idgsm_neg_no_norm.gamma = gamma;
 opts_idgsm_neg_no_norm.epsilon = eps_att;
+opts_idgsm_neg_no_norm.alpha = 0.01;          % ステップサイズ
+opts_idgsm_neg_no_norm.max_iteration = 40;     % 最大反復回数
 opts_idgsm_neg_no_norm.direction = 'negative';
 opts_idgsm_neg_no_norm.save_history = true;
 opts_idgsm_neg_no_norm.save_grad_norms = true;
@@ -140,6 +144,8 @@ fprintf('\n6. IDGSM攻撃（positive方向）...\n');
 opts_idgsm_pos = struct();
 opts_idgsm_pos.gamma = gamma;
 opts_idgsm_pos.epsilon = eps_att;
+opts_idgsm_pos.alpha = 0.01;           % ステップサイズ
+opts_idgsm_pos.max_iteration = 40;    % 最大反復回数
 opts_idgsm_pos.direction = 'positive';
 opts_idgsm_pos.save_history = true;
 opts_idgsm_pos.save_grad_norms = true;

@@ -27,9 +27,9 @@
 % term1 = kron(L1,Ex1);
 % term2 = kron(L2,Ex2);
 % term3 = kron(L1,Ez2);
-% term4 = kron(Ez2,L1)*implicit.helper.commutation(n1,T);
+% term4 = kron(Ez2,L1)*core.helper.commutation(n1,T);
 % term5 = kron(L1,Eu4);
-% term6 = kron(Eu4,L1)*implicit.helper.commutation(n1,T);
+% term6 = kron(Eu4,L1)*core.helper.commutation(n1,T);
 
 % dF_dD = term1 + term2 + term3 + term4 + term5 + term6;
 % end
@@ -38,8 +38,8 @@ function dF_dD = dF_dD(n,m,T,L)
 nF  = 2*n + 2*m;
 
 % --- commutation sanity ---
-Knn = implicit.helper.commutation(n,n);     % vec(A') = Knn*vec(A) for A(nxn)
-Kmn = implicit.helper.commutation(m,n);     % A is (m x n) -> A' is (n x m)
+Knn = core.helper.commutation(n,n);     % vec(A') = Knn*vec(A) for A(nxn)
+Kmn = core.helper.commutation(m,n);     % A is (m x n) -> A' is (n x m)
 
 % --- selectors: Z = Ez*D, X = Ex*D, U = Eu*D ---
 Ez = [speye(n), sparse(n,n+m)];

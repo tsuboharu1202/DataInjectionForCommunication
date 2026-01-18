@@ -6,7 +6,7 @@ dGamma_dU = kron(speye(T),tempU);
 
 
 pinvGamma = pinv(Gamma);
-dpinvGamma_dGamma = helper.dpinvGamma_dGamma(n,m,T,Gamma);
+dpinvGamma_dGamma = proposed.gradient.helper.dpinvGamma_dGamma(n,m,T,Gamma);
 
 
 termX1 = -kron(Gamma',speye(T))*dpinvGamma_dGamma*dGamma_dX;

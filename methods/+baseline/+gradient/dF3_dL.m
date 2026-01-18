@@ -8,5 +8,5 @@ E2 = [zeros(n,m);
     speye(m)];
 
 % 誤りの可能性あり
-% dF3_dL = kron(E2,E1) + kron(E1,E2)*gradient.commutation(m,n);
-dF3_dL = kron(E1, E2) + kron(E2, E1) * gradient.commutation(m,n);
+% dF3_dL = kron(E2,E1) + kron(E1,E2)*core.helper.commutation(m,n);
+dF3_dL = kron(E1, E2) + kron(E2, E1) * core.helper.commutation(m,n);

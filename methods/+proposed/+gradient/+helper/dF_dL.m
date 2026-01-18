@@ -15,8 +15,8 @@
 % U4 = [sparse(2*n+m,T);
 %     U];
 % dF_dL = kron(E1,X1)+ kron(E2,X2) + kron(E2,Z2) +...
-%     kron(E1,Z2) +kron(Z2,E1)*implicit.helper.commutation(T,n) +...
-%     kron(E1,U4) +kron(U4,E1)*implicit.helper.commutation(T,n);
+%     kron(E1,Z2) +kron(Z2,E1)*core.helper.commutation(T,n) +...
+%     kron(E1,U4) +kron(U4,E1)*core.helper.commutation(T,n);
 
 % end
 
@@ -24,8 +24,8 @@
 function dF_dL = dF_dL(n,m,T,X,Z,U)
 nF = 2*n + 2*m;
 
-Knn = implicit.helper.commutation(n,n);
-Kmn = implicit.helper.commutation(m,n);  % ★修正: (m,n)
+Knn = core.helper.commutation(n,n);
+Kmn = core.helper.commutation(m,n);  % ★修正: (m,n)
 
 J_ZL  = kron(speye(n), Z);        % vec(ZL)  = (I ⊗ Z) vec(L)
 J_XL  = kron(speye(n), X);        % vec(XL)  = (I ⊗ X) vec(L)

@@ -1,7 +1,7 @@
 function sol = G8_merge(n, m, T)
 sol = struct();
 
-Knn = implicit.helper.commutation(n,n);
+Knn = core.helper.commutation(n,n);
 r = n*n; % rows
 
 sol.dtDelta   = sparse(r,1);
