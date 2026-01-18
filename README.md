@@ -88,7 +88,7 @@ ForCommunication/
 A = cfg.System.A;
 B = cfg.System.B;
 [n, m] = cfg.System.getDimensions();
-T = cfg.System.getSampleCount();
+T = 20;  % サンプル数
 
 % データ生成
 V = make_inputU(m, T);

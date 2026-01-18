@@ -5,7 +5,7 @@ clear; clc; close all;
 A = cfg.System.A;
 B = cfg.System.B;
 [n, m] = cfg.System.getDimensions();
-T = cfg.System.getSampleCount();
+T = 20;  % サンプル数
 
 % disp('A');disp(A);
 % disp('B');disp(B);

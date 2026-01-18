@@ -15,7 +15,7 @@ fprintf('=== 正則化の効果評価テスト ===\n\n');
 % ============================================
 n_systems = 10;  % システム数
 [n, m] = cfg.System.getDimensions();
-T = cfg.System.getSampleCount();
+T = 20;  % サンプル数
 
 % 正則化パラメータ
 gamma_with_reg = 1e3;  % 正則化あり
